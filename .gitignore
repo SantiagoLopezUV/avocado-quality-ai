@@ -205,3 +205,20 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Datos
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/sample/
+
+# Modelos grandes
+data/trained_models/*.h5
+data/trained_models/*.keras
+data/trained_models/*.pt
+data/trained_models/*.pth
+!data/trained_models/.gitkeep
+
+# Notebooks checkpoints
+notebooks/.ipynb_checkpoints/

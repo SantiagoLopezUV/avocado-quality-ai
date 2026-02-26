@@ -1,0 +1,21 @@
+# Dependencias para entrenamiento en Google Colab
+# Colab ya tiene TensorFlow, pero especificamos versión para consistencia
+
+tensorflow>=2.15.0
+keras>=2.15.0
+numpy>=1.24.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+scikit-learn>=1.3.0
+Pillow>=10.0.0
+opencv-python>=4.8.0
+pandas>=2.0.0
+
+# Para visualización de métricas
+tensorboard>=2.15.0
+
+# Para manejo de datasets
+split-folders>=0.5.1
+
+# Utilidades
+tqdm>=4.66.0
