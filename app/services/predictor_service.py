@@ -9,6 +9,17 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Predictor mock para prueba de api inicial
+def predict(data):
+    """
+    Predictor mock.
+    Luego aquí se cargará el modelo real de ML.
+    """
+    return {
+        "quality": "good",
+        "confidence": 0.95
+    }
+#-------------------------------------
 
 class AvocadoQualityPredictor:
     """Predictor de calidad de aguacates usando modelo CNN."""
