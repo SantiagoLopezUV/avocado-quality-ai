@@ -35,3 +35,17 @@ Para mantener la estabilidad del repositorio, se deben seguir las siguientes ins
  Cualquier nueva dependencia técnica requerida para el entorno de experimentación en Colab debe ser documentada de manera explícita en el archivo requirements-colab.txt ubicado en la raíz del proyecto.
 
 ##Las dependencias del servidor local (FastAPI, Ultralytics, etc.) deben mantenerse actualizadas en el archivo "requirements.txt".
+
+
+## Descargar el modelo de inteligencia artificial
+
+Dado que los pesos del modelo de IA son archivos muy pesados, el archivo `best.pt` no está incluido en este repositorio para evitar saturar el historial de Git.
+
+Para que funcione en el local: 
+
+1. Descargar el modelo entrenado (`best.pt`)** desde Google Drive: 
+  https://drive.google.com/drive/folders/1SsD899mGVJCd_uvSuRkHyeUGjsAfYXZd?usp=drive_link
+/6TO SEMESTRE/DESARROLLO DE SOFTWARE II/model-v2/best_v2.pt
+
+   
+2.  El archivo se pone exactamente en data/trained_models/best_v2.pt
