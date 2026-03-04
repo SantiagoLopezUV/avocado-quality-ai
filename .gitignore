@@ -220,5 +220,11 @@ data/trained_models/*.pt
 data/trained_models/*.pth
 !data/trained_models/.gitkeep
 
+# modelos base de YOLO que se descargan automáticamente en la raíz
+yolov8*.pt
+
+#en cada entrenamiento se generan archivos de pesos con el formato "runs/detect/train/weights/last.pt" y "runs/detect/train/weights/best.pt"
+runs/
+
 # Notebooks checkpoints
 notebooks/.ipynb_checkpoints/
