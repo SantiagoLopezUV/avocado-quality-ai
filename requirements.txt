@@ -1,7 +1,20 @@
 # Dependencias para usar FastAPI
 fastapi
 uvicorn[standard]
-#dependecias adicionales
+python-multipart # Para manejar archivos subidos a través de FastAPI, necesario para recbir las fotos que se suben desde el frontend
+
+# Dependencias para usar Ultralytics, escencial para la IA
+ultralytics>=8.0.0
+
+# Necesario para que 'app/core/config.py' lea el archivo .env con las variables de entorno, como la ruta del modelo entrenado
+python-dotenv
+pydantic-settings
+
+#dependecias adicionales, para el procesamiento de imagenes
 Pillow>=10.0.0
-opencv-python>=4.8.0
+opencv-python-headless
 numpy>=1.24.0
+
+#Para ejecturar los archivos de entrenamiento y evaluación en test
+pytest
+httpx
