@@ -20,10 +20,11 @@ async def analyze_image(file: UploadFile = File(...)):
     with open(temp_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    report = predictor_service.predict_image(temp_path)
+    report = await analysis_service.analyze_avocado(temp_path)
 
     # Eliminar la imagen temporal después de procesarla
-    os.remove(temp_path)
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
 
     return{
         "filename": file.filename,

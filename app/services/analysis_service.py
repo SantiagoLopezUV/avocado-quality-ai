@@ -12,10 +12,12 @@ class AnalysisService:
     # Funcionamiento sin IA
         prediction = self.predictor.predict_image(file_path)
 
-        ###tambien se puede agregar calcular el precio sugerido basado en la calidad del aguacate###
+        ###tambien se puede agregar calcular el precio sugerido basado en la calidad del aguacate, se agrega en el return, para devolver el precio sugerido según la calidad del agucate
 
         return {         # Retornar un resultado simulado para hacer las pruebas
             "fruit": "avocado",
             "prediction": prediction["quality"],
-            "confidence": prediction["confidence"]
+            "confidence": prediction["confidence"],
+            "spots_count": prediction["spots_count"],
+            "detections": prediction["detections"]
         }

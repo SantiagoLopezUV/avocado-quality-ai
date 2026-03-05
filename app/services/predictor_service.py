@@ -32,10 +32,10 @@ class PredictorService:
             "quality": "Affected" if spots else "Healthy",
             "confidence": round(max_confidence  , 2),
             "spots_count": len(result.boxes),
-            "detections": [
+            "detections": [ #daños detectados, con su clase y confianza, se itera sobre las cajas detectadas en el resultado y se extrae la clase y la confianza de cada una, se devuelve una lista de diccionarios con esta información para cada daño detectado
                 {
                     "class": result.names[int(box.cls[0])],
-                    "conf": float(box.conf[0])
+                    "conf": float(f"{box.conf[0]*100:.2f}"),  # Convertir a porcentaje
                 } for box in result.boxes
             ]
         }
