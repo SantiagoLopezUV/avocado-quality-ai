@@ -19,5 +19,7 @@ class AnalysisService:
             "prediction": prediction["quality"],
             "confidence": prediction["confidence"],
             "spots_count": prediction["spots_count"],
-            "detections": prediction["detections"]
+            "detections": prediction["detections"],
+            "image_base64": prediction["image_base64"],
+
         }

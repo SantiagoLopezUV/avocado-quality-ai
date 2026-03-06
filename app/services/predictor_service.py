@@ -1,3 +1,4 @@
+from app.services.image_processing import ImageProcessor
 from ultralytics import YOLO
 import os 
 
@@ -18,26 +19,43 @@ class PredictorService:
             self.model = YOLO("yolov8n.pt")  # por si no carga el modelo personalizado, se carga un modelo preentrenado como fallback
 
     def predict_image(self, image_path: str):
-        # Realizar la predicción en la imagen dada
-        #conf = 0.5 asegura que solo se consideren predicciones con una confianza del 50% o más
-        results = self.model.predict(source=image_path, conf = 0.5)
-        result = results[0]
+            # Realizar la predicción en la imagen dada
+            #conf = 0.5 asegura que solo se consideren predicciones con una confianza del 50% o más
+        try:
+            results = self.model.predict(source=image_path, conf = 0.5)
+            result = results[0]
 
-        #tiene manchas si el número de cajas detectadas es mayor a 0
-        spots = len(result.boxes) > 0
+            #tiene manchas si el número de cajas detectadas es mayor a 0
+            spots = len(result.boxes) > 0
 
-        max_confidence = float(result.boxes.conf.max()) if spots else 1.0      #resultado de la confianza mas alta entre las detecciones, si no hay detecciones se asigna 1.0, lo que significa el 100% de confianza en que el aguacate está sano
+            max_confidence = float(result.boxes.conf.max()) if spots else 1.0      #resultado de la confianza mas alta entre las detecciones, si no hay detecciones se asigna 1.0, lo que significa el 100% de confianza en que el aguacate está sano
 
-        return {
-            "quality": "Affected" if spots else "Healthy",
-            "confidence": round(max_confidence  , 2),
-            "spots_count": len(result.boxes),
-            "detections": [ #daños detectados, con su clase y confianza, se itera sobre las cajas detectadas en el resultado y se extrae la clase y la confianza de cada una, se devuelve una lista de diccionarios con esta información para cada daño detectado
-                {
-                    "class": result.names[int(box.cls[0])],
-                    "conf": float(f"{box.conf[0]*100:.2f}"),  # Convertir a porcentaje
-                } for box in result.boxes
-            ]
-        }
+            detections = [] #daños detectados, con su clase y confianza, se itera sobre las cajas detectadas en el resultado y se extrae la clase y la confianza de cada una, se devuelve una lista de diccionarios con esta información para cada daño detectado
+            for box in result.boxes:
+                detections.append({
+                    "class": result.names[int(box.cls[0].item())],
+                    "conf": round(float(box.conf[0].item()) * 100, 2)
+                })
+
+            plotted_image = result.plot()
+            base64_image = ImageProcessor.encode_image_to_base64(plotted_image)
+
+
+            return {
+                "quality": "Affected" if spots else "Healthy",
+                "confidence": round(max_confidence  , 2),
+                "spots_count": len(result.boxes),
+                "detections": detections,
+                "image_base64": base64_image
+            }
+        except Exception as e:
+            print(f"Error durante la predicción: {e}")
+            return {
+                "quality": "Unknown",
+                "confidence": 0.0,
+                "spots_count": 0,
+                "detections": [],
+                "image_base64": None
+            }
 
         
