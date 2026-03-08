@@ -9,7 +9,7 @@ class ImageProcessor: # Clase para procesar imágenes, se puede agregar funcione
         # Leer la imagen y convertirla a base64
 
         # Codificar la imagen a formato JPEG
-        success, buffer, image = cv2.imencode('.jpg', image_array)
+        success, buffer = cv2.imencode('.jpg', image_array)
 
         if not success:
             raise ValueError("No se pudo codificar la imagen")
