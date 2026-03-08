@@ -228,3 +228,4 @@ runs/
 
 # Notebooks checkpoints
 notebooks/.ipynb_checkpoints/
+.vs/
