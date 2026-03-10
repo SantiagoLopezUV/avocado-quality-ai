@@ -12,7 +12,7 @@ class ImageProcessor: # Clase para procesar imágenes, se puede agregar funcione
         success, buffer = cv2.imencode('.jpg', image_array)
 
         if not success:
-            raise ValueError("No se pudo codificar la imagen")
+            raise ValueError("No se pudo codificar la ima   gen")
         #Se pasan los bytes de la imagen a base64 
         #y se pasa a un string pcon utf-8 para poder enviarlo en el response de la API con el .json
         base64_image = base64.b64encode(buffer)
