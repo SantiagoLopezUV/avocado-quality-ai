@@ -28,6 +28,17 @@ export default function DashboardPage() {
     }
   };
 
+
+  const ripinnes_level = (level) => {
+    const niveles = {
+      "Underripe": "Verde ",
+      "Ripening": "Pintón",
+      "Ripe": "Maduro",
+      "Overripe": "Pasado",
+      "Unknown": "No identificado"
+    };
+    return niveles[level] || level;
+  };
   // --- FUNCIÓN 2: CUANDO LE DAN AL BOTÓN "ANALIZAR" ---
   const handleAnalyze = async () => {
     if (!imageFile) {
@@ -54,36 +65,59 @@ export default function DashboardPage() {
       const data = await response.json(); 
       console.log("¡DATOS DE LA IA! 👉", data);
 
-      // 2. Entramos a la "cajita" donde Python guardó todo
-      const reporte = data.analysis_report;
+      // // 2. Entramos a la "cajita" donde Python guardó todo
+      // const reporte = data.analysis_report;
 
-      // 3. Traducimos los datos usando los nombres exactos de tu IA
-      const estaSano = reporte.prediction === "Healthy";
-      
+      // // 3. Traducimos los datos usando los nombres exactos de tu IA
+      // const estaSano = reporte.prediction === "Healthy";
+      const fuenteDatos = data.analysis_report || data;
+      const { analysis_results, business_logic, visuals } = fuenteDatos;
+
       setResult({
-        health: estaSano ? "Sano y Limpio" : "Afectado (Con Roña)",
+
+        health: analysis_results.health_status === "Healthy" ? "Sano y Limpio" : "Afectado (Con Roña)",
+        healthPercent: Math.round(analysis_results.ripeness_conf || 0), // Usamos la confianza del modelo
+        disease: analysis_results.spots_found > 0 
+          ? `Se detectaron ${analysis_results.spots_found} mancha(s)` 
+          : "Ninguna detectada",
+
+        ripeness: ripinnes_level(analysis_results.ripeness_level),
+        ripenessConf: Math.round(analysis_results.ripeness_conf),
+
+        //mostrar el precio sugerido según la calidad del aguacate, se agrega en el return, para devolver el precio sugerido según la calidad del agucate
+        suggestedPrice: business_logic.suggested_price || 0,
+        destination: business_logic?.market_destination || "Calculando...",
+
+        recommendation: `Según el analisis, este aguacate es ideal para: ${business_logic?.market_destination}.`,
+
+
+        health: analysis_results.health_status === "Healthy" ? "Sano y Limpio" : "Afectado (Con Roña)",
         // Multiplicamos por 100 para sacar el porcentaje correcto
-        healthPercent: Math.round(reporte.confidence * 100), 
+        healthPercent: Math.round(analysis_results.ripeness_conf || 0),
         // Si tienes spots_count en tu reporte, lo usamos. Si no, lo omitimos.
-        disease: reporte.spots_count > 0 ? `Se detectaron ${reporte.spots_count} mancha(s)` : "Ninguna detectada",
-        recommendation: estaSano 
-          ? "Su aguacatal está de lo mejor. Calidad de exportación." 
-          : "Tiene manchas. Mejor separar este lote para venta local o guacamole.",
-        ripeness: "Análisis enfocado en piel/roña", 
+        // disease: analysis_results.spots_found > 0 ? `Se detectaron ${analysis_results.spots_found} mancha(s)` : "Ninguna detectada",
+        // recommendation: analysis_results.health_status === "Healthy" 
+        //   ? "Su aguacatal está de lo mejor. Calidad de exportación." 
+        //   : "Tiene manchas. Mejor separar este lote para venta local o guacamole.",
+        // //ripeness: "Análisis enfocado en piel/roña", 
       });
+      
 
       // 4. Si la IA nos manda la foto con los cuadritos, actualizamos la imagen en pantalla
-      if (reporte.image_base64) {
-        setSelectedImage(`data:image/jpeg;base64,${reporte.image_base64}`);
+      if (visuals && visuals.image_base64) {
+        setSelectedImage(`data:image/jpeg;base64,${visuals.image_base64}`);
       }
 
     } catch (error) {
       console.error("Hubo un problema conectando con la API:", error);
-      alert("No se pudo conectar con la Inteligencia Artificial. Revise si la consola de Python está encendida.");
+      alert("hubi un error: " + error.message);
+      //alert("No se pudo conectar con la Inteligencia Artificial. Revise si la consola de Python está encendida.");
     } finally {
       setAnalyzing(false);
     }
   };
+
+
 
   // --- DISEÑO DE LA PÁGINA ---
   return (
@@ -222,6 +256,7 @@ export default function DashboardPage() {
                     <span className="text-4xl">✅</span>
                     <h3 className="text-3xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors">Resultados</h3>
                   </div>
+                  
 
                   {/* Health Status */}
                   <div className="bg-[#8bc34a10] dark:bg-[#8bc34a20] rounded-2xl p-6 transition-colors">
@@ -238,6 +273,7 @@ export default function DashboardPage() {
                     <p className="text-2xl font-bold text-[#8bc34a] dark:text-[#9ccc65] mt-3 transition-colors">{result.health}</p>
                   </div>
 
+
                   {/* Disease Detection */}
                   <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-6 transition-colors">
                     <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">Enfermedades:</p>
@@ -245,9 +281,15 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Ripeness */}
-                  <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-6 transition-colors">
-                    <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">Madurez:</p>
-                    <p className="text-xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors">{result.ripeness}</p>
+                  <div className="bg-[#f3e5f5] dark:bg-purple-900/20 rounded-2xl p-6 border-l-8 border-purple-500 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-bold text-purple-700 dark:text-purple-300 uppercase">Estado de Madurez</p>
+                        <p className="text-2xl font-black text-purple-900 dark:text-purple-100 mt-1">{result.ripeness}</p>
+                        <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">Precisión: {result.ripenessConf}%</p>
+                      </div>
+                      <span className="text-4xl">🥑</span>
+                    </div>
                   </div>
 
                   {/* Recommendations */}
@@ -258,6 +300,18 @@ export default function DashboardPage() {
                         <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">Recomendación:</p>
                         <p className="text-xl text-[#0d1b0d] dark:text-gray-300 leading-relaxed transition-colors">{result.recommendation}</p>
                       </div>
+                    </div>
+                  </div>
+
+
+                  {/* Suggested Price */}
+                  <div className="bg-gradient-to-r from-[#f1f8e9] to-[#ffffff] dark:from-gray-700 dark:to-gray-800 p-6 rounded-2xl border-2 border-[#8bc34a] shadow-inner">
+                    <p className="text-sm font-bold text-[#689f38] dark:text-[#9ccc65] uppercase tracking-wider mb-1">Precio Sugerido x Kg</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-black text-[#0d1b0d] dark:text-white">
+                        ${result.suggestedPrice?.toLocaleString('es-CO')}
+                      </span>
+                      <span className="text-lg font-bold text-[#475569] dark:text-gray-400 text-sm">COP</span>
                     </div>
                   </div>
 
