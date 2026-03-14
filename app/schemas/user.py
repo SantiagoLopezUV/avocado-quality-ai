@@ -1,0 +1,1 @@
+# Define que datos entran y salen (Pydantic))

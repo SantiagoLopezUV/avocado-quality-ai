@@ -1,0 +1,1 @@
+# Define la Tabla en la Base de Datos (SQLAlchemy)
