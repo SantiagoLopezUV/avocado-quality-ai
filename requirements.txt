@@ -18,7 +18,7 @@ python-dotenv
 ultralytics>=8.0.0
 opencv-python-headless
 numpy>=1.24.0
-Pillow>=10.0.0
+#base64 
 
 # Testing
 pytest
