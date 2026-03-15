@@ -2,20 +2,35 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [editMode, setEditMode] = useState(false);
+  
+  // Si no hay usuario logueado, redirigir al login
+  if (!user) {
+    navigate("/");
+    return null;
+  }
+
   const [profile, setProfile] = useState({
-    name: "Don Roberto Pérez",
+    name: user.name || "Usuario",
     farm: "Finca La Esperanza",
-    location: "Caicedonia, Valle del Cauca",
-    phone: "320 456 7890",
-    email: "roberto.perez@ejemplo.com",
+    location: user.location || "Valle del Cauca",
+    phone: user.phone || "No registrado",
+    email: user.email || "No registrado",
+    document_number: user.document_number || "No registrado",
     experience: "25 años cultivando aguacate",
     area: "15 hectáreas",
     certification: "Certificado ICA",
   });
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   const stats = {
     totalSales: 45,
@@ -155,6 +170,13 @@ export default function ProfilePage() {
                 <button className="w-full bg-[#f3f7f3] dark:bg-gray-700 hover:bg-[#e4ede4] dark:hover:bg-gray-600 text-[#0d1b0d] dark:text-gray-200 py-3 rounded-xl text-lg font-semibold transition-colors flex items-center justify-center gap-2">
                   <span className="text-2xl">⚙️</span>
                   Configuración
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full bg-red-500 dark:bg-red-600 text-white py-3 rounded-xl text-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  <span className="text-2xl">🚪</span>
+                  Cerrar Sesión
                 </button>
               </div>
             </div>
