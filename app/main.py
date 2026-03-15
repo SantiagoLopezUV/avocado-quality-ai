@@ -14,7 +14,6 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allow_origins,  # Se puede configurar en .env
     #allow_origins=["*"],  # El asterisco deja que cualquier React se conecte
-    #
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

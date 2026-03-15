@@ -338,8 +338,12 @@ export default function LoginPage() {
                     <label className="text-base font-semibold text-[#0d1b0d] dark:text-gray-200 transition-colors">
                       Contraseña
                     </label>
-                    {isLogin && (
-                      <button type="button" className="text-sm font-semibold text-[#8bc34a] dark:text-[#9ccc65] hover:underline transition-colors">
+                            {isLogin && (
+                      <button 
+                        type="button" 
+                        onClick={() => navigate("/forgot-password")}
+                        className="text-sm font-semibold text-[#8bc34a] dark:text-[#9ccc65] hover:underline transition-colors"
+                      >
                         ¿Olvidó su clave?
                       </button>
                     )}

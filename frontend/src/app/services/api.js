@@ -122,3 +122,51 @@ export async function updateUser(userId, updateData) {
     throw error;
   }
 }
+/**
+ * SOLICITAR RECUPERACIÓN DE CONTRASEÑA
+ * POST /auth/forgot-password
+ * 
+ * @param {string} email - Correo electrónico del usuario
+ * @returns {Promise<Object>} Respuesta con token (para simular envío de email)
+ */
+export async function forgotPassword(email) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    return await handleResponse(response);
+  } catch (error) {
+    console.error("Error solicitando reset de contraseña:", error);
+    throw error;
+  }
+}
+
+/**
+ * RESTABLECER CONTRASEÑA CON TOKEN
+ * POST /auth/reset-password
+ * 
+ * @param {string} token - Token de recuperación
+ * @param {string} newPassword - Nueva contraseña
+ * @returns {Promise<Object>} Mensaje de confirmación
+ */
+export async function resetPassword(token, newPassword) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token, new_password: newPassword }),
+    });
+
+    return await handleResponse(response);
+  } catch (error) {
+    console.error("Error restableciendo contraseña:", error);
+    throw error;
+  }
+}
