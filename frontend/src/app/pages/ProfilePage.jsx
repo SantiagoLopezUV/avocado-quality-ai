@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
@@ -10,11 +10,16 @@ export default function ProfilePage() {
   const [editMode, setEditMode] = useState(false);
   
   // Si no hay usuario logueado, redirigir al login
+  useEffect(() => {
+    if (!user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  // Si no hay usuario, mostrar null mientras redirige
   if (!user) {
-    navigate("/");
     return null;
   }
-
   const [profile, setProfile] = useState({
     name: user.name || "Usuario",
     farm: "Finca La Esperanza",
