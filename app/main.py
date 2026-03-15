@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from app.api.v1 import api_router
 from app.core.config import settings
+from app.core.database import engine
+from sqlalchemy import text
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -32,7 +34,7 @@ app.include_router(api_router)
 
 
 
-#-----------------------------------------------------#
+# #-----------------------------------------------------#
 
 @app.get("/")
 async def root():
@@ -42,3 +44,14 @@ async def root():
         "status": "Running"
     }
 
+
+# Endpoint de prueba para verificar la conexión a la base de datos
+
+# @app.get("/test-db")
+# def test_db():
+#     try:
+#         with engine.connect() as conn:
+#             conn.execute(text("SELECT 1"))
+#         return {"status": "Conexión exitosa"}
+#     except Exception as e:
+#         return {"status": "Error", "detail": str(e)}

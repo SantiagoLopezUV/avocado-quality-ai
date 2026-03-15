@@ -1,5 +1,5 @@
 # Define que datos entran y salen (Pydantic))
-# Define que datos acepta y dedvuelve la API (Pydantic)
+# Define que datos acepta y deVuelve la API (Pydantic)
 from pydantic import BaseModel, EmailStr
 from uuid import UUID
 from datetime import datetime
