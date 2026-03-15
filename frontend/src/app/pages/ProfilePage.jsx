@@ -3,32 +3,52 @@ import { useNavigate } from "react-router";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
 
-export default function LoginPage() {
+export default function ProfilePage() {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [profile, setProfile] = useState({
+    name: "Don Roberto Pérez",
+    farm: "Finca La Esperanza",
+    location: "Caicedonia, Valle del Cauca",
+    phone: "320 456 7890",
+    email: "roberto.perez@ejemplo.com",
+    experience: "25 años cultivando aguacate",
+    area: "15 hectáreas",
+    certification: "Certificado ICA",
+  });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    navigate("/dashboard");
+  const stats = {
+    totalSales: 45,
+    activeListings: 3,
+    rating: 4.8,
+    totalRevenue: "$125,450,000",
   };
+
+  const recentActivity = [
+    { id: 1, action: "Vendió lote Hass Premium", date: "Hace 2 días", amount: "$2,250,000" },
+    { id: 2, action: "Publicó nuevo lote", date: "Hace 5 días", amount: "-" },
+    { id: 3, action: "Recibió calificación 5⭐", date: "Hace 1 semana", amount: "-" },
+    { id: 4, action: "Vendió lote Exportación", date: "Hace 2 semanas", amount: "$5,200,000" },
+  ];
 
   return (
     <div className="bg-[#f6f8f6] dark:bg-gray-900 min-h-screen flex flex-col transition-colors">
       {/* Header */}
-      <header className="bg-[#e8f5e9] dark:bg-gray-800 border-b-2 border-[#c5e1a5] dark:border-gray-700 px-6 py-6 transition-colors">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-[0px] py-[8px]">
-          <Logo size="lg" showText={true} />
+      <header className="bg-[#e8f5e9] dark:bg-gray-800 border-b-2 border-[#c5e1a5] dark:border-gray-700 px-6 py-6 sticky top-0 z-50 transition-colors">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <button onClick={() => navigate("/")} className="hover:opacity-80 transition-opacity">
+            <Logo size="lg" showText={true} />
+          </button>
           <div className="flex items-center gap-6">
-            <nav className="hidden md:flex gap-8">
-              <button onClick={() => navigate("/dashboard")} className="text-lg text-gray-900 dark:text-gray-100 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
+            <nav className="flex gap-6">
+              <button onClick={() => navigate("/dashboard")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
                 Diagnóstico
               </button>
-              <button onClick={() => navigate("/marketplace")} className="text-lg text-gray-900 dark:text-gray-100 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
+              <button onClick={() => navigate("/marketplace")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
                 Mi Plaza
               </button>
-              <button onClick={() => navigate("/help")} className="text-lg text-gray-900 dark:text-gray-100 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
-                Ayuda
+              <button onClick={() => navigate("/profile")} className="text-lg text-[#8bc34a] dark:text-[#9ccc65] font-bold border-b-4 border-[#8bc34a] dark:border-[#9ccc65] pb-1 transition-colors">
+                Mi Perfil
               </button>
             </nav>
             <ThemeToggle />
@@ -37,357 +57,261 @@ export default function LoginPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-6xl grid md:grid-cols-2 gap-12 items-center">
-          {/* Left Side - Hero */}
-          <div className="space-y-6">
-            <div className="bg-[#8bc34a20] dark:bg-[#8bc34a30] inline-block px-4 py-2 rounded-full transition-colors">
-              <p className="text-[#8bc34a] dark:text-[#9ccc65] font-bold text-base uppercase tracking-wide">🌱 Tecnología pa' tu aguacatal</p>
+      <main className="flex-1 px-6 py-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Page Header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-4xl">👨‍🌾</span>
+              <h2 className="text-4xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors">Mi Perfil</h2>
             </div>
-            
-            <h2 className="text-5xl md:text-6xl font-black text-[#0d1b0d] dark:text-gray-100 leading-tight transition-colors">
-              Súmele a su<br />
-              <span className="text-[#8bc34a] dark:text-[#9ccc65]">Cultivo</span> con<br />
-              Inteligencia<br />
-              Artificial
-            </h2>
-            
-            <p className="text-xl text-[#0d1b0d] dark:text-gray-300 opacity-70 leading-relaxed transition-colors">
-              Revise cómo está su cosecha al toque y venda sus lotes de aguacate a lo bien. 
-              Únase a los parceros que ya están mejorando sus cultivos.
+            <p className="text-xl text-[#475569] dark:text-gray-400 leading-relaxed transition-colors">
+              Aquí puede ver y editar su información, revisar sus ventas y manejar su cuenta.
             </p>
-
-            <div className="flex items-center gap-4 pt-4">
-              <div className="flex -space-x-3">
-                <div className="size-14 rounded-full bg-[#8bc34a] dark:bg-[#7cb342] border-4 border-white dark:border-gray-800 flex items-center justify-center text-white text-xl transition-colors">
-                  👨‍🌾
-                </div>
-                <div className="size-14 rounded-full bg-[#689f38] dark:bg-[#558b2f] border-4 border-white dark:border-gray-800 flex items-center justify-center text-white text-xl transition-colors">
-                  👩‍🌾
-                </div>
-                <div className="size-14 rounded-full bg-[#8bc34a] dark:bg-[#7cb342] border-4 border-white dark:border-gray-800 flex items-center justify-center text-white text-xl transition-colors">
-                  👴
-                </div>
-              </div>
-              <p className="text-lg font-medium text-[#1a2e1a] dark:text-gray-300 transition-colors">
-                Más de 2,000 agricultores vallunos
-              </p>
-            </div>
           </div>
 
-          {/* Right Side - Form */}
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 md:p-12 transition-colors">
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-3xl font-bold text-[#0d1b0d] dark:text-gray-100 mb-3 transition-colors">
-                  {isLogin ? "Bienvenido de Nuevo" : "Regístrese Aquí"}
-                </h3>
-                <p className="text-lg text-[#1a2e1a] dark:text-gray-400 opacity-60 transition-colors">
-                  {isLogin 
-                    ? "Entre pa' revisar su cultivo" 
-                    : "Súmele a los agricultores del Valle"
-                  }
-                </p>
-              </div>
-
-              {/* Toggle */}
-              <div className="bg-[#f3f7f3] dark:bg-gray-700 p-2 rounded-2xl flex gap-2 transition-colors">
-                <button
-                  onClick={() => setIsLogin(true)}
-                  className={`flex-1 py-3 rounded-xl text-lg font-semibold transition-all ${
-                    isLogin 
-                      ? "bg-white dark:bg-gray-600 shadow-md text-[#0d1b0d] dark:text-gray-100" 
-                      : "text-[#1a2e1a] dark:text-gray-400 opacity-60"
-                  }`}
-                >
-                  Entrar
-                </button>
-                <button
-                  onClick={() => setIsLogin(false)}
-                  className={`flex-1 py-3 rounded-xl text-lg font-semibold transition-all ${
-                    !isLogin 
-                      ? "bg-white dark:bg-gray-600 shadow-md text-[#0d1b0d] dark:text-gray-100" 
-                      : "text-[#1a2e1a] dark:text-gray-400 opacity-60"
-                  }`}
-                >
-                  Registrarse
-                </button>
-              </div>
-
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* 
-                  CONEXIÓN A BASE DE DATOS:
-                  Cuando el usuario envíe el formulario (handleSubmit), debés capturar estos valores
-                  y enviarlos a tu backend para insertarlos en la tabla 'users':
-                  
-                  - userID: Generalo en el backend como UUID (ej: crypto.randomUUID() en Node.js)
-                  - name: Del campo "Nombre Completo"
-                  - email: Del campo "Correo Electrónico"
-                  - phone: Del campo "Teléfono"
-                  - location: Del campo "Ubicación"
-                  - password_hash: Hasheá la contraseña con bcrypt antes de guardarla
-                  - created_at: Se genera automáticamente con CURRENT_TIMESTAMP en SQL
-                  
-                  Ejemplo de adaptación:
-                  const handleSubmit = async (e) => {
-                    e.preventDefault();
-                    const formData = {
-                      documentId: e.target.documentId.value,
-                      name: e.target.name.value,
-                      email: e.target.email.value,
-                      phone: e.target.phone.value,
-                      location: e.target.location.value,
-                      password: e.target.password.value
-                    };
-                    
-                    // Enviar a tu API
-                    const response = await fetch('/api/register', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(formData)
-                    });
-                  };
-                */}
-
-                {/* Documento de Identidad - Solo en Registro */}
-                {!isLogin && (
-                  <div>
-                    <label className="block text-base font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">
-                      Documento de Identidad
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        name="documentId"
-                        placeholder="Ej: 1234567890"
-                        pattern="[0-9]{6,10}"
-                        title="Ingrese un documento válido (6-10 dígitos)"
-                        className="w-full px-5 py-4 pl-14 text-lg border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-2xl focus:border-[#8bc34a] dark:focus:border-[#9ccc65] focus:outline-none transition-colors"
-                        required={!isLogin}
-                      />
-                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl">
-                        🪪
-                      </span>
-                    </div>
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Left Column - Profile Card */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Profile Card */}
+              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors">
+                <div className="text-center mb-6">
+                  <div className="size-32 bg-gradient-to-br from-[#8bc34a] to-[#7cb342] rounded-full mx-auto mb-4 flex items-center justify-center text-7xl">
+                    👨‍🌾
                   </div>
-                )}
-
-                {/* Nombre Completo - Solo en Registro */}
-                {!isLogin && (
-                  <div>
-                    <label className="block text-base font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">
-                      Nombre Completo
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        name="name"
-                        placeholder="Ej: Juan Pérez García"
-                        minLength="3"
-                        maxLength="100"
-                        className="w-full px-5 py-4 pl-14 text-lg border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-2xl focus:border-[#8bc34a] dark:focus:border-[#9ccc65] focus:outline-none transition-colors"
-                        required={!isLogin}
-                      />
-                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl">
-                        👤
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Email */}
-                <div>
-                  <label className="block text-base font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">
-                    Correo Electrónico
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="ejemplo@correo.com"
-                      maxLength="255"
-                      className="w-full px-5 py-4 pl-14 text-lg border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-2xl focus:border-[#8bc34a] dark:focus:border-[#9ccc65] focus:outline-none transition-colors"
-                      required
-                    />
-                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl">
-                      📧
-                    </span>
+                  <h3 className="text-2xl font-bold text-[#0d1b0d] dark:text-gray-100 mb-2 transition-colors">{profile.name}</h3>
+                  <p className="text-lg text-[#475569] dark:text-gray-400 transition-colors">{profile.farm}</p>
+                  <div className="flex items-center justify-center gap-2 mt-3">
+                    <span className="text-3xl">⭐</span>
+                    <span className="text-2xl font-bold text-[#8bc34a] dark:text-[#9ccc65] transition-colors">{stats.rating}</span>
+                    <span className="text-lg text-[#475569] dark:text-gray-400 transition-colors">(45 ventas)</span>
                   </div>
                 </div>
 
-                {/* Teléfono - Solo en Registro */}
-                {!isLogin && (
-                  <div>
-                    <label className="block text-base font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">
-                      Teléfono/Celular
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="tel"
-                        name="phone"
-                        placeholder="Ej: 3001234567"
-                        pattern="[0-9]{10}"
-                        title="Ingrese un número de 10 dígitos"
-                        maxLength="20"
-                        className="w-full px-5 py-4 pl-14 text-lg border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-2xl focus:border-[#8bc34a] dark:focus:border-[#9ccc65] focus:outline-none transition-colors"
-                        required={!isLogin}
-                      />
-                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl">
-                        📱
-                      </span>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">📍</span>
+                    <div>
+                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">Ubicación</p>
+                      <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 transition-colors">{profile.location}</p>
                     </div>
                   </div>
-                )}
-
-                {/* Ubicación (Municipio del Valle) - Solo en Registro */}
-                {!isLogin && (
-                  <div>
-                    <label className="block text-base font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">Ubicación (Municipio)</label>
-                    <div className="relative">
-                      <select
-                        name="location"
-                        className="w-full px-5 py-4 pl-14 text-lg border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-2xl focus:border-[#8bc34a] dark:focus:border-[#9ccc65] focus:outline-none transition-colors appearance-none"
-                        required={!isLogin}
-                      >
-                        <option value="">Seleccione su municipio</option>
-                        <option value="Cali">Cali</option>
-                        <option value="Palmira">Palmira</option>
-                        <option value="Tuluá">Tuluá</option>
-                        <option value="Buga">Buga</option>
-                        <option value="Cartago">Cartago</option>
-                        <option value="Buenaventura">Buenaventura</option>
-                        <option value="Jamundí">Jamundí</option>
-                        <option value="Yumbo">Yumbo</option>
-                        <option value="Candelaria">Candelaria</option>
-                        <option value="Pradera">Pradera</option>
-                        <option value="Florida">Florida</option>
-                        <option value="Sevilla">Sevilla</option>
-                        <option value="Caicedonia">Caicedonia</option>
-                        <option value="Ginebra">Ginebra</option>
-                        <option value="El Cerrito">El Cerrito</option>
-                        <option value="Otro">Otro municipio del Valle</option>
-                      </select>
-                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl">
-                        📍
-                      </span>
-                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                        ▼
-                      </span>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">📞</span>
+                    <div>
+                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">Teléfono</p>
+                      <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 transition-colors">{profile.phone}</p>
                     </div>
                   </div>
-                )}
-
-                {/* Password */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-base font-semibold text-[#0d1b0d] dark:text-gray-200 transition-colors">
-                      Contraseña
-                    </label>
-                    {isLogin && (
-                      <button type="button" className="text-sm font-semibold text-[#8bc34a] dark:text-[#9ccc65] hover:underline transition-colors">
-                        ¿Olvidó su clave?
-                      </button>
-                    )}
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">✉️</span>
+                    <div>
+                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">Correo</p>
+                      <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 break-all transition-colors">{profile.email}</p>
+                    </div>
                   </div>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      placeholder="••••••••"
-                      minLength="8"
-                      className="w-full px-5 py-4 pl-14 pr-14 text-lg border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-2xl focus:border-[#8bc34a] dark:focus:border-[#9ccc65] focus:outline-none transition-colors"
-                      required
-                    />
-                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl">
-                      🔒
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-5 top-1/2 -translate-y-1/2 text-2xl hover:opacity-70"
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🌳</span>
+                    <div>
+                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">Experiencia</p>
+                      <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 transition-colors">{profile.experience}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">📐</span>
+                    <div>
+                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">Área cultivada</p>
+                      <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 transition-colors">{profile.area}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">✅</span>
+                    <div>
+                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">Certificación</p>
+                      <p className="text-lg font-semibold text-[#8bc34a] dark:text-[#9ccc65] transition-colors">{profile.certification}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setEditMode(!editMode)}
+                  className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-4 rounded-2xl text-xl font-bold hover:bg-[#7cb342] dark:hover:bg-[#689f38] transition-colors mt-6"
+                >
+                  {editMode ? "Guardar Cambios" : "Editar Perfil"}
+                </button>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 space-y-3 transition-colors">
+                <h3 className="text-xl font-bold text-[#0d1b0d] dark:text-gray-100 mb-4 transition-colors">Acciones Rápidas</h3>
+                <button className="w-full bg-[#f3f7f3] dark:bg-gray-700 hover:bg-[#e4ede4] dark:hover:bg-gray-600 text-[#0d1b0d] dark:text-gray-200 py-3 rounded-xl text-lg font-semibold transition-colors flex items-center justify-center gap-2">
+                  <span className="text-2xl">📤</span>
+                  Publicar Lote Nuevo
+                </button>
+                <button className="w-full bg-[#f3f7f3] dark:bg-gray-700 hover:bg-[#e4ede4] dark:hover:bg-gray-600 text-[#0d1b0d] dark:text-gray-200 py-3 rounded-xl text-lg font-semibold transition-colors flex items-center justify-center gap-2">
+                  <span className="text-2xl">💬</span>
+                  Mis Mensajes
+                </button>
+                <button className="w-full bg-[#f3f7f3] dark:bg-gray-700 hover:bg-[#e4ede4] dark:hover:bg-gray-600 text-[#0d1b0d] dark:text-gray-200 py-3 rounded-xl text-lg font-semibold transition-colors flex items-center justify-center gap-2">
+                  <span className="text-2xl">⚙️</span>
+                  Configuración
+                </button>
+              </div>
+            </div>
+
+            {/* Right Column - Stats and Activity */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Stats Cards */}
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-colors">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <p className="text-lg text-[#475569] dark:text-gray-400 mb-2 transition-colors">Total Ventas</p>
+                      <p className="text-4xl font-black text-[#0d1b0d] dark:text-gray-100 transition-colors">{stats.totalSales}</p>
+                    </div>
+                    <span className="text-5xl">💰</span>
+                  </div>
+                  <div className="bg-[#8bc34a10] dark:bg-[#8bc34a20] rounded-xl px-3 py-2 inline-block transition-colors">
+                    <p className="text-sm font-semibold text-[#8bc34a] dark:text-[#9ccc65] transition-colors">+5 este mes</p>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-colors">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <p className="text-lg text-[#475569] dark:text-gray-400 mb-2 transition-colors">Lotes Activos</p>
+                      <p className="text-4xl font-black text-[#0d1b0d] dark:text-gray-100 transition-colors">{stats.activeListings}</p>
+                    </div>
+                    <span className="text-5xl">📦</span>
+                  </div>
+                  <div className="bg-[#fff4e6] dark:bg-orange-900/30 rounded-xl px-3 py-2 inline-block transition-colors">
+                    <p className="text-sm font-semibold text-[#ff8c00] dark:text-orange-400 transition-colors">2 pendientes de revisar</p>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-[#8bc34a] to-[#7cb342] rounded-2xl shadow-lg p-6 sm:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xl text-white opacity-90 mb-2">Ingresos Totales</p>
+                      <p className="text-5xl font-black text-white">{stats.totalRevenue}</p>
+                    </div>
+                    <span className="text-7xl">💵</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-[#0d1b0d] dark:text-gray-100 flex items-center gap-3 transition-colors">
+                    <span className="text-3xl">📊</span>
+                    Actividad Reciente
+                  </h3>
+                  <button className="text-lg text-[#8bc34a] dark:text-[#9ccc65] font-semibold hover:underline transition-colors">
+                    Ver todo
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {recentActivity.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-5 flex items-center justify-between hover:bg-[#e4ede4] dark:hover:bg-gray-600 transition-colors"
                     >
-                      {showPassword ? "👁️" : "👁️‍🗨️"}
+                      <div className="flex-1">
+                        <p className="text-xl font-semibold text-[#0d1b0d] dark:text-gray-100 mb-1 transition-colors">
+                          {activity.action}
+                        </p>
+                        <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">{activity.date}</p>
+                      </div>
+                      {activity.amount !== "-" && (
+                        <p className="text-2xl font-bold text-[#8bc34a] dark:text-[#9ccc65] transition-colors">{activity.amount}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* My Listings */}
+              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors">
+                <h3 className="text-2xl font-bold text-[#0d1b0d] dark:text-gray-100 mb-6 flex items-center gap-3 transition-colors">
+                  <span className="text-3xl">🥑</span>
+                  Mis Lotes Publicados
+                </h3>
+
+                <div className="space-y-4">
+                  <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-5 flex items-center gap-4 transition-colors">
+                    <div className="size-20 bg-gradient-to-br from-[#8bc34a] to-[#7cb342] rounded-xl flex items-center justify-center text-5xl">
+                      🥑
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-[#0d1b0d] dark:text-gray-100 mb-1 transition-colors">Hass Premium</h4>
+                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">500 kg • $4,500/kg</p>
+                      <div className="flex gap-2 mt-2">
+                        <span className="bg-[#8bc34a] dark:bg-[#7cb342] text-white px-3 py-1 rounded-full text-sm font-bold">
+                          Activo
+                        </span>
+                        <span className="bg-white dark:bg-gray-600 text-[#475569] dark:text-gray-300 px-3 py-1 rounded-full text-sm font-semibold transition-colors">
+                          12 visitas
+                        </span>
+                      </div>
+                    </div>
+                    <button className="text-lg text-[#8bc34a] dark:text-[#9ccc65] font-bold hover:underline transition-colors">
+                      Editar
                     </button>
                   </div>
-                  {!isLogin && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                      Mínimo 8 caracteres
-                    </p>
-                  )}
-                </div>
 
-                {/* Certification Checkbox (only for signup) */}
-                {!isLogin && (
-                  <div className="bg-[#f3f7f3] dark:bg-gray-700 border-2 border-[#e4ede4] dark:border-gray-600 rounded-2xl p-5 transition-colors">
-                    <label className="flex items-start gap-4 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="isCertified"
-                        className="mt-1 size-6 rounded border-2 border-[#8bc34a] text-[#8bc34a] focus:ring-[#8bc34a]"
-                      />
-                      <div>
-                        <p className="text-base font-semibold text-[#0d1b0d] dark:text-gray-200 transition-colors">
-                          Registrarme como Agricultor Certificado
-                        </p>
-                        <p className="text-sm text-[#1a2e1a] dark:text-gray-400 opacity-70 mt-1 transition-colors">
-                          Acceso completo al diagnóstico IA y al marketplace
-                        </p>
+                  <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-5 flex items-center gap-4 transition-colors">
+                    <div className="size-20 bg-gradient-to-br from-[#8bc34a] to-[#7cb342] rounded-xl flex items-center justify-center text-5xl">
+                      🥑
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-[#0d1b0d] dark:text-gray-100 mb-1 transition-colors">Hass Exportación</h4>
+                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">1,000 kg • $5,200/kg</p>
+                      <div className="flex gap-2 mt-2">
+                        <span className="bg-[#8bc34a] dark:bg-[#7cb342] text-white px-3 py-1 rounded-full text-sm font-bold">
+                          Activo
+                        </span>
+                        <span className="bg-white dark:bg-gray-600 text-[#475569] dark:text-gray-300 px-3 py-1 rounded-full text-sm font-semibold transition-colors">
+                          28 visitas
+                        </span>
                       </div>
-                    </label>
+                    </div>
+                    <button className="text-lg text-[#8bc34a] dark:text-[#9ccc65] font-bold hover:underline transition-colors">
+                      Editar
+                    </button>
                   </div>
-                )}
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-5 rounded-2xl text-xl font-bold hover:bg-[#7cb342] dark:hover:bg-[#689f38] transition-colors shadow-lg hover:shadow-xl"
-                >
-                  {isLogin ? "Entrar al Sistema" : "Crear Mi Cuenta"}
-                </button>
-              </form>
-
-              {/* Divider */}
-              <div className="relative py-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t-2 border-[#e4ede4] dark:border-gray-600 transition-colors"></div>
+                  <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-5 flex items-center gap-4 opacity-60 transition-colors">
+                    <div className="size-20 bg-[#e4ede4] dark:bg-gray-600 rounded-xl flex items-center justify-center text-5xl transition-colors">
+                      🥑
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-[#0d1b0d] dark:text-gray-300 mb-1 transition-colors">Hass Selecto</h4>
+                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">750 kg • $4,800/kg</p>
+                      <div className="flex gap-2 mt-2">
+                        <span className="bg-[#94a3b8] text-white px-3 py-1 rounded-full text-sm font-bold">
+                          Vendido
+                        </span>
+                        <span className="bg-white dark:bg-gray-600 text-[#475569] dark:text-gray-300 px-3 py-1 rounded-full text-sm font-semibold transition-colors">
+                          Hace 2 días
+                        </span>
+                      </div>
+                    </div>
+                    <button className="text-lg text-[#475569] dark:text-gray-400 font-bold transition-colors">
+                      Ver
+                    </button>
+                  </div>
                 </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-white dark:bg-gray-800 px-4 text-base text-[#94a3b8] dark:text-gray-400 uppercase transition-colors">
-                    o continuar con
-                  </span>
-                </div>
-              </div>
 
-              {/* Social Login */}
-              <div className="grid grid-cols-2 gap-4">
-                <button className="flex items-center justify-center gap-3 py-4 border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 rounded-2xl text-base font-semibold hover:bg-[#f3f7f3] dark:hover:bg-gray-600 transition-colors dark:text-gray-200">
-                  <span className="text-xl">🔍</span>
-                  Google
-                </button>
-                <button className="flex items-center justify-center gap-3 py-4 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 rounded-2xl text-base font-semibold hover:bg-[#f3f7f3] dark:hover:bg-gray-600 transition-colors dark:text-gray-200">
-                  <span className="text-xl">💼</span>
-                  LinkedIn
+                <button className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-4 rounded-2xl text-xl font-bold hover:bg-[#7cb342] dark:hover:bg-[#689f38] transition-colors mt-6">
+                  + Publicar Nuevo Lote
                 </button>
               </div>
             </div>
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-white dark:bg-gray-800 border-t-2 border-[#e4ede4] dark:border-gray-700 px-6 py-6 transition-colors">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-[#94a3b8] dark:text-gray-400 transition-colors">
-            © 2024 Avocado. Todos los derechos reservados. Agricultura de precisión para un futuro sostenible.
-          </p>
-          <div className="flex gap-6 text-sm text-[#94a3b8] dark:text-gray-400">
-            <button className="hover:text-[#8bc34a] dark:hover:text-[#9ccc65] transition-colors">Privacidad</button>
-            <button className="hover:text-[#8bc34a] dark:hover:text-[#9ccc65] transition-colors">Términos</button>
-            <button onClick={() => navigate("/help")} className="hover:text-[#8bc34a] dark:hover:text-[#9ccc65] transition-colors">Centro de Ayuda</button>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     DATABASE_URL: str
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:5173"]  # Permitir todas las URLs por defecto, se puede configurar en .env
+    allow_origins: list[str] = ["http://localhost:5173"]  # Permitir todas las URLs por defecto, se puede configurar en .env
 
     class Config:
         env_file = ".env"
