@@ -280,13 +280,13 @@ export default function DashboardPage() {
                     <p className="text-xl font-bold text-[#8bc34a] dark:text-[#9ccc65] transition-colors">{result.disease}</p>
                   </div>
 
-                  {/* Ripeness */}
-                  <div className="bg-[#f3e5f5] dark:bg-purple-900/20 rounded-2xl p-6 border-l-8 border-purple-500 transition-colors">
+                                    {/* Ripeness */}
+                  <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-6 transition-colors">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="text-sm font-bold text-purple-700 dark:text-purple-300 uppercase">Estado de Madurez</p>
-                        <p className="text-2xl font-black text-purple-900 dark:text-purple-100 mt-1">{result.ripeness}</p>
-                        <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">Precisión: {result.ripenessConf}%</p>
+                        <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">Madurez:</p>
+                        <p className="text-xl font-bold text-[#8bc34a] dark:text-[#9ccc65] mt-1">{result.ripeness}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Precisión: {result.ripenessConf}%</p>
                       </div>
                       <span className="text-4xl">🥑</span>
                     </div>
