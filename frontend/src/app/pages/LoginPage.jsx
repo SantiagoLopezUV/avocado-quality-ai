@@ -116,6 +116,86 @@ export default function LoginPage() {
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-5">
+                {/* 
+                  CONEXIÓN A BASE DE DATOS:
+                  Cuando el usuario envíe el formulario (handleSubmit), debés capturar estos valores
+                  y enviarlos a tu backend para insertarlos en la tabla 'users':
+                  
+                  - userID: Generalo en el backend como UUID (ej: crypto.randomUUID() en Node.js)
+                  - name: Del campo "Nombre Completo"
+                  - email: Del campo "Correo Electrónico"
+                  - phone: Del campo "Teléfono"
+                  - location: Del campo "Ubicación"
+                  - password_hash: Hasheá la contraseña con bcrypt antes de guardarla
+                  - created_at: Se genera automáticamente con CURRENT_TIMESTAMP en SQL
+                  
+                  Ejemplo de adaptación:
+                  const handleSubmit = async (e) => {
+                    e.preventDefault();
+                    const formData = {
+                      documentId: e.target.documentId.value,
+                      name: e.target.name.value,
+                      email: e.target.email.value,
+                      phone: e.target.phone.value,
+                      location: e.target.location.value,
+                      password: e.target.password.value
+                    };
+                    
+                    // Enviar a tu API
+                    const response = await fetch('/api/register', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(formData)
+                    });
+                  };
+                */}
+
+                {/* Documento de Identidad - Solo en Registro */}
+                {!isLogin && (
+                  <div>
+                    <label className="block text-base font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">
+                      Documento de Identidad
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="documentId"
+                        placeholder="Ej: 1234567890"
+                        pattern="[0-9]{6,10}"
+                        title="Ingrese un documento válido (6-10 dígitos)"
+                        className="w-full px-5 py-4 pl-14 text-lg border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-2xl focus:border-[#8bc34a] dark:focus:border-[#9ccc65] focus:outline-none transition-colors"
+                        required={!isLogin}
+                      />
+                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl">
+                        🪪
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Nombre Completo - Solo en Registro */}
+                {!isLogin && (
+                  <div>
+                    <label className="block text-base font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">
+                      Nombre Completo
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="name"
+                        placeholder="Ej: Juan Pérez García"
+                        minLength="3"
+                        maxLength="100"
+                        className="w-full px-5 py-4 pl-14 text-lg border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-2xl focus:border-[#8bc34a] dark:focus:border-[#9ccc65] focus:outline-none transition-colors"
+                        required={!isLogin}
+                      />
+                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl">
+                        👤
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Email */}
                 <div>
                   <label className="block text-base font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">
@@ -124,7 +204,9 @@ export default function LoginPage() {
                   <div className="relative">
                     <input
                       type="email"
+                      name="email"
                       placeholder="ejemplo@correo.com"
+                      maxLength="255"
                       className="w-full px-5 py-4 pl-14 text-lg border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-2xl focus:border-[#8bc34a] dark:focus:border-[#9ccc65] focus:outline-none transition-colors"
                       required
                     />
@@ -133,6 +215,68 @@ export default function LoginPage() {
                     </span>
                   </div>
                 </div>
+
+                {/* Teléfono - Solo en Registro */}
+                {!isLogin && (
+                  <div>
+                    <label className="block text-base font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">
+                      Teléfono/Celular
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="tel"
+                        name="phone"
+                        placeholder="Ej: 3001234567"
+                        pattern="[0-9]{10}"
+                        title="Ingrese un número de 10 dígitos"
+                        maxLength="20"
+                        className="w-full px-5 py-4 pl-14 text-lg border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-2xl focus:border-[#8bc34a] dark:focus:border-[#9ccc65] focus:outline-none transition-colors"
+                        required={!isLogin}
+                      />
+                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl">
+                        📱
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ubicación (Municipio del Valle) - Solo en Registro */}
+                {!isLogin && (
+                  <div>
+                    <label className="block text-base font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">Ubicación (Municipio)</label>
+                    <div className="relative">
+                      <select
+                        name="location"
+                        className="w-full px-5 py-4 pl-14 text-lg border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-2xl focus:border-[#8bc34a] dark:focus:border-[#9ccc65] focus:outline-none transition-colors appearance-none"
+                        required={!isLogin}
+                      >
+                        <option value="">Seleccione su municipio</option>
+                        <option value="Cali">Cali</option>
+                        <option value="Palmira">Palmira</option>
+                        <option value="Tuluá">Tuluá</option>
+                        <option value="Buga">Buga</option>
+                        <option value="Cartago">Cartago</option>
+                        <option value="Buenaventura">Buenaventura</option>
+                        <option value="Jamundí">Jamundí</option>
+                        <option value="Yumbo">Yumbo</option>
+                        <option value="Candelaria">Candelaria</option>
+                        <option value="Pradera">Pradera</option>
+                        <option value="Florida">Florida</option>
+                        <option value="Sevilla">Sevilla</option>
+                        <option value="Caicedonia">Caicedonia</option>
+                        <option value="Ginebra">Ginebra</option>
+                        <option value="El Cerrito">El Cerrito</option>
+                        <option value="Otro">Otro municipio del Valle</option>
+                      </select>
+                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl">
+                        📍
+                      </span>
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                        ▼
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Password */}
                 <div>
@@ -149,7 +293,9 @@ export default function LoginPage() {
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
+                      name="password"
                       placeholder="••••••••"
+                      minLength="8"
                       className="w-full px-5 py-4 pl-14 pr-14 text-lg border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-2xl focus:border-[#8bc34a] dark:focus:border-[#9ccc65] focus:outline-none transition-colors"
                       required
                     />
@@ -164,6 +310,11 @@ export default function LoginPage() {
                       {showPassword ? "👁️" : "👁️‍🗨️"}
                     </button>
                   </div>
+                  {!isLogin && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      Mínimo 8 caracteres
+                    </p>
+                  )}
                 </div>
 
                 {/* Certification Checkbox (only for signup) */}
@@ -172,6 +323,7 @@ export default function LoginPage() {
                     <label className="flex items-start gap-4 cursor-pointer">
                       <input
                         type="checkbox"
+                        name="isCertified"
                         className="mt-1 size-6 rounded border-2 border-[#8bc34a] text-[#8bc34a] focus:ring-[#8bc34a]"
                       />
                       <div>
@@ -213,7 +365,7 @@ export default function LoginPage() {
                   <span className="text-xl">🔍</span>
                   Google
                 </button>
-                <button className="flex items-center justify-center gap-3 py-4 border-2 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 rounded-2xl text-base font-semibold hover:bg-[#f3f7f3] dark:hover:bg-gray-600 transition-colors dark:text-gray-200">
+                <button className="flex items-center justify-center gap-3 py-4 border-[#e4ede4] dark:border-gray-600 dark:bg-gray-700 rounded-2xl text-base font-semibold hover:bg-[#f3f7f3] dark:hover:bg-gray-600 transition-colors dark:text-gray-200">
                   <span className="text-xl">💼</span>
                   LinkedIn
                 </button>

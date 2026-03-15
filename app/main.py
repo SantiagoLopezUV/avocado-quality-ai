@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.api.v1 import api_router
+from app.core.config import settings
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,20 +12,21 @@ app = FastAPI(
 # Configuración de CORS para permitir solicitudes desde frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # El asterisco deja que cualquier React se conecte
+    allow_origins=settings.allow_origins,  # Se puede configurar en .env
+    #allow_origins=["*"],  # El asterisco deja que cualquier React se conecte
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Configuración de CORS para permitir solicitudes desde frontend
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"], #se cambia por URL del frontend 
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+# # app.add_middleware(
+# #     CORSMiddleware,
+# #     allow_origins=["*"], #se cambia por URL del frontend 
+# #     allow_credentials=True,
+# #     allow_methods=["*"],
+# #     allow_headers=["*"],
+# # )
 
 app.include_router(api_router)
 
@@ -36,8 +38,7 @@ app.include_router(api_router)
 async def root():
     return {
         "message": "Bienvenido a Avocado Quality AI ",
-        # "docs": "/docs",
-        # "status": "Running"
+        "docs": "/docs",
+        "status": "Running"
     }
-
 
