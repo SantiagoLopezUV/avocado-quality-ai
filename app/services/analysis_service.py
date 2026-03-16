@@ -27,7 +27,7 @@ class AnalysisService:
                 "ripeness_conf": ripeness["confidence"]
             },
             "business_logic": {
-                # "suggested_price": precio_final,
+                # Este será calculado por PriceCalculator en analyze.py
                 "market_destination": report["market_suggestion"],
                 "currency": "COP"
             },
