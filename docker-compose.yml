@@ -35,7 +35,11 @@ services:
     container_name: agrodata-web
     ports:
       - "80:80"
+    volumes:
+      - ./frontend:/app # Monta el directorio frontend en /app dentro del contenedor
+      - /app/node_modules # Evita que los node_modules del host se monten en el contenedor, lo que puede causar problemas de compatibilidad
     depends_on:
       - backend
+
 volumes:
   postgres_data: #declarar el volumen para persistencia de datos
