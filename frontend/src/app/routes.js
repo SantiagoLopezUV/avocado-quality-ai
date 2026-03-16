@@ -1,10 +1,12 @@
 import { createBrowserRouter } from "react-router";
-import Root from "./pages/Root";
-import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import HelpPage from "./pages/HelpPage";
+import LoginPage from "./pages/LoginPage";
 import MarketplacePage from "./pages/MarketplacePage";
 import ProfilePage from "./pages/ProfilePage";
-import HelpPage from "./pages/HelpPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import Root from "./pages/Root";
 
 export const router = createBrowserRouter([
   {
@@ -16,6 +18,8 @@ export const router = createBrowserRouter([
       { path: "marketplace", Component: MarketplacePage },
       { path: "profile", Component: ProfilePage },
       { path: "help", Component: HelpPage },
+      { path: "forgot-password", Component: ForgotPasswordPage },
+      { path: "reset-password", Component: ResetPasswordPage },
     ],
   },
 ]);
