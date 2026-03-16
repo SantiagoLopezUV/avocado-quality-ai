@@ -17,10 +17,10 @@ try:
         # Ejecuta una consulta simple para obtener el nombre de la DB
         result = conn.execute(text("SELECT current_database()"))
         db_name = result.scalar()
-        print(f"\n✅ DATABASE CHECK: Conectado exitosamente a la base de datos: '{db_name}'")
-        print(f"🔗 URL: {settings.DATABASE_URL}\n")
+        print(f"\nDATABASE CHECK: Conectado exitosamente a la base de datos: '{db_name}'")
+        print(f"URL: {settings.DATABASE_URL}\n")
 except Exception as e:
-    print(f"\n❌ ERROR DE CONEXIÓN: {e}\n")
+    print(f"\nERROR DE CONEXIÓN: {e}\n")
     
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
