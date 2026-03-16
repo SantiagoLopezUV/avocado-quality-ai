@@ -9,6 +9,8 @@ app = FastAPI(
     version="0.1.0"
     
 )
+
+
 # Configuración de CORS para permitir solicitudes desde frontend
 app.add_middleware(
     CORSMiddleware,

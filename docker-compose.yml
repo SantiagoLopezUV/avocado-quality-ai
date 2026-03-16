@@ -1,0 +1,45 @@
+
+services:
+
+  db: #Servicio de base de datos PostgreSQL
+    image: postgres:15-alpine
+    container_name: agrodata-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: alejo2705
+      POSTGRES_DB: avocado-quality-ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  backend:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    container_name: agrodata-api
+    env_file: #Cargar variables de entorno desde el archivo .env
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app # Monta el directorio actual en /app dentro del contenedor
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload #--reload para que se reinicie el servidor cada vez que se hagan cambios en el código
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agrodata-web
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/app # Monta el directorio frontend en /app dentro del contenedor
+      - /app/node_modules # Evita que los node_modules del host se monten en el contenedor, lo que puede causar problemas de compatibilidad
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data: #declarar el volumen para persistencia de datos

@@ -16,8 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiamos el contenido de la carpeta app y el modelo .pt
 COPY . .
 #Copiamos la carpeta data completa con los modelos cargados
-COPY ../data/ ./data/
+#COPY ../data/ ./data/
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app:main:app", "--host", "0.0.0.0", "--port", "8000"]

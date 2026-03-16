@@ -1,3 +1,5 @@
+from matplotlib import text
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -10,7 +12,16 @@ engine = create_engine(settings.DATABASE_URL,
                     pool_size=10,
                     max_overflow=20)
 
-
+try:
+    with engine.connect() as conn:
+        # Ejecuta una consulta simple para obtener el nombre de la DB
+        result = conn.execute(text("SELECT current_database()"))
+        db_name = result.scalar()
+        print(f"\nDATABASE CHECK: Conectado exitosamente a la base de datos: '{db_name}'")
+        print(f"URL: {settings.DATABASE_URL}\n")
+except Exception as e:
+    print(f"\nERROR DE CONEXIÓN: {e}\n")
+    
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
@@ -22,3 +33,5 @@ def get_db():
         yield db
     finally:
         db.close()
+
+

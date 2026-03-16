@@ -2,15 +2,59 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { login, register } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate("/dashboard");
+    setError("");
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        // LOGIN
+        const email = e.target.email.value;
+        const password = e.target.password.value;
+
+        const result = await login(email, password);
+        
+        if (result.success) {
+          navigate("/dashboard");
+        } else {
+          setError(result.error || "Error al iniciar sesión");
+        }
+      } else {
+        // REGISTRO
+        const userData = {
+          document_number: e.target.documentId?.value || null,
+          name: e.target.name.value,
+          email: e.target.email.value,
+          phone: e.target.phone?.value || null,
+          location: e.target.location?.value || null,
+          password: e.target.password.value,
+        };
+
+        const result = await register(userData);
+        
+        if (result.success) {
+          navigate("/dashboard");
+        } else {
+          setError(result.error || "Error al registrarse");
+        }
+      }
+    } catch (err) {
+      setError("Error de conexión con el servidor");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -113,6 +157,16 @@ export default function LoginPage() {
                   Registrarse
                 </button>
               </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-800 rounded-2xl p-4 transition-colors">
+                  <p className="text-red-800 dark:text-red-200 text-base font-semibold flex items-center gap-2">
+                    <span className="text-2xl">⚠️</span>
+                    {error}
+                  </p>
+                </div>
+              )}
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -284,8 +338,12 @@ export default function LoginPage() {
                     <label className="text-base font-semibold text-[#0d1b0d] dark:text-gray-200 transition-colors">
                       Contraseña
                     </label>
-                    {isLogin && (
-                      <button type="button" className="text-sm font-semibold text-[#8bc34a] dark:text-[#9ccc65] hover:underline transition-colors">
+                            {isLogin && (
+                      <button 
+                        type="button" 
+                        onClick={() => navigate("/forgot-password")}
+                        className="text-sm font-semibold text-[#8bc34a] dark:text-[#9ccc65] hover:underline transition-colors"
+                      >
                         ¿Olvidó su clave?
                       </button>
                     )}
@@ -341,9 +399,17 @@ export default function LoginPage() {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-5 rounded-2xl text-xl font-bold hover:bg-[#7cb342] dark:hover:bg-[#689f38] transition-colors shadow-lg hover:shadow-xl"
+                  disabled={loading}
+                  className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-5 rounded-2xl text-xl font-bold hover:bg-[#7cb342] dark:hover:bg-[#689f38] transition-colors shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLogin ? "Entrar al Sistema" : "Crear Mi Cuenta"}
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="animate-spin text-2xl">⏳</span>
+                      {isLogin ? "Entrando..." : "Creando cuenta..."}
+                    </span>
+                  ) : (
+                    isLogin ? "Entrar al Sistema" : "Crear Mi Cuenta"
+                  )}
                 </button>
               </form>
 
