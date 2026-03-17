@@ -21,7 +21,7 @@ Sprint 0 – Configuración inicial y definición del MVP.
 Sprint 1 - Desarrollo de la arquitectura base del proyecto: implementación del sistema de autenticación (Login/Registro), integración de la base de datos PostgreSQL, y contenerización completa (Frontend, Backend, DB) mediante Docker
 
 # Estructura del Proyecto
-
+```
 avocado-quality-ai/
 ├── .env
 ├── .github/
@@ -123,6 +123,7 @@ avocado-quality-ai/
 ├── requirements.txt
 ├── requirements-colab.txt
 └── README.md
+```
 
 Resumen de la estructura:
 • Backend: Python/FastAPI con una arquitectura por capas (routes → services → repositories → models)
