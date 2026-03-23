@@ -13,5 +13,5 @@ provider "local" {}
 # Simulamos la creación de un servidor creando un recurso local
 resource "local_file" "servidor_agro_data_simulado" {
   content  = "=== SERVIDOR AGRO DATA ACTIVO ===\nModelo: YOLOv8 Calidad de Aguacates\nEstado: Desplegado vía Terraform y GitLab CI/CD\n==================================="
-  filename = "${path.module}/estado_servidor.txt"
+  filename = "/tmp/estado_servidor.txt"
 }
