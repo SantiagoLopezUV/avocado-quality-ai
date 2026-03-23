@@ -16,7 +16,6 @@ deploy_com_terraform:
       - '/usr/bin/env'
       - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
   script:
-    - cd avocado-quality-ai
     - echo "Iniciando Terraform..."
     - terraform init 
     - terraform plan
