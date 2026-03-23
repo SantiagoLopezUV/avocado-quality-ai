@@ -11,6 +11,6 @@ deploy_com_terraform: # Definir un trabajo para desplegar la infraestructura con
   stage: deploy_infrastructure
   image: hashicorp/terraform:light
   script:
-    - terraform init
+    - terraform init 
     - terraform plan
     - terraform apply -auto-approve
