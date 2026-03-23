@@ -6,16 +6,17 @@ test_modelo_abacates:
   stage: test
   script:
     - echo "Probando la precisión del modelo YOLO de aguacates..."
-    - echo "Pruebas pasadas exitosamente "
+    - echo "Pruebas pasadas exitosamente ✅"
 
 deploy_com_terraform:
-  stage: deploy_infrastructure
-  image: hashicorp/terraform:light
+  stage: deploy_infrast ructure
+  image:
+    name: hashicorp/terraform:light
+    entrypoint: [""]      #  anula el bloqueo de Terraform
   script:
-    - cd avocado-quality-ai #buscar el directorio del proyecto
+    - cd avocado-quality-ai
     - echo "Iniciando Terraform..."
-    - terraform init  #inicializa el directorio de trabajo de Terraform
-    - terraform plan  #muestra el plan de ejecución de Terraform
-    - terraform apply -auto-approve #aplica los cambios de infraestructura sin pedir confirmación
-    - echo "Verificando el recurso creado en la infraestructura:" 
+    - terraform init 
+    - terraform plan
+    - terraform apply -auto-approve
     - cat /tmp/estado_servidor.txt
