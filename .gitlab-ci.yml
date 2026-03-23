@@ -9,10 +9,12 @@ test_modelo_abacates:
     - echo "Pruebas pasadas exitosamente ✅"
 
 deploy_com_terraform:
-  stage: deploy_infrast ructure
+  stage: deploy_infrastructure
   image:
     name: hashicorp/terraform:light
-    entrypoint: [""]      #  anula el bloqueo de Terraform
+    entrypoint:
+      - '/usr/bin/env'
+      - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
   script:
     - cd avocado-quality-ai
     - echo "Iniciando Terraform..."
