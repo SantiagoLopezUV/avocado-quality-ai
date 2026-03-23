@@ -12,10 +12,10 @@ deploy_com_terraform:
   stage: deploy_infrastructure
   image: hashicorp/terraform:light
   script:
-    - ls -la
+    - cd avocado-quality-ai #buscar el directorio del proyecto
     - echo "Iniciando Terraform..."
-    - terraform init 
-    - terraform plan
-    - terraform apply -auto-approve
-    - echo "Verificando el recurso creado en la infraestructura:"
+    - terraform init  #inicializa el directorio de trabajo de Terraform
+    - terraform plan  #muestra el plan de ejecución de Terraform
+    - terraform apply -auto-approve #aplica los cambios de infraestructura sin pedir confirmación
+    - echo "Verificando el recurso creado en la infraestructura:" 
     - cat /tmp/estado_servidor.txt
