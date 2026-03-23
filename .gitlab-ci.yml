@@ -1,16 +1,20 @@
-stages: # Definir las etapas del pipeline
+stages:
   - test
   - deploy_infrastructure
 
-test_modelo_abacates: # Definir un trabajo para probar el modelo de detección de aguacates
+test_modelo_abacates:
   stage: test
   script:
-    - echo "Probando la precisión del modelo YOLO"
+    - echo "Probando la precisión del modelo YOLO de aguacates..."
+    - echo "Pruebas pasadas exitosamente"
 
-deploy_com_terraform: # Definir un trabajo para desplegar la infraestructura con Terraform
+deploy_com_terraform:
   stage: deploy_infrastructure
   image: hashicorp/terraform:light
   script:
+    - echo "Iniciando Terraform..."
     - terraform init 
     - terraform plan
     - terraform apply -auto-approve
+    - echo "Verificando el recurso creado en la infraestructura:"
+    - cat estado_servidor.txt

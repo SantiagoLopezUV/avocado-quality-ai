@@ -1,13 +1,17 @@
-# main.tf  
-provider "aws" { 
-  region = "us-east-1"
+# main.tf
+terraform {
+  required_providers {
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.4"
+    }
+  }
 }
 
-resource "aws_instance" "agro_data_server" {
-  ami           = "ami-0c55b159cbfafe1f0" # Imagen base de Ubuntu
-  instance_type = "t2.micro"              # Tamaño del servidor
+provider "local" {}
 
-  tags = {
-    Name = "Avocado-Quality-AI-Server"
-  }
+# Simulamos la creación de un servidor creando un recurso local
+resource "local_file" "servidor_agro_data_simulado" {
+  content  = "=== SERVIDOR AGRO DATA ACTIVO ===\nModelo: YOLOv8 Calidad de Aguacates\nEstado: Desplegado vía Terraform y GitLab CI/CD\n==================================="
+  filename = "${path.module}/estado_servidor.txt"
 }
