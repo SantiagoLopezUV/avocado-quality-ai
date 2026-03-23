@@ -12,6 +12,7 @@ deploy_com_terraform:
   stage: deploy_infrastructure
   image: hashicorp/terraform:light
   script:
+    - ls -la
     - echo "Iniciando Terraform..."
     - terraform init 
     - terraform plan
