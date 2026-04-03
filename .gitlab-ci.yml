@@ -6,7 +6,7 @@ test_modelo_abacates:
   stage: test
   script:
     - echo "Probando la precisión del modelo YOLO de aguacates..."
-    - echo "Pruebas pasadas exitosamente ✅"
+    - echo "Pruebas pasadas exitosamente"
 
 deploy_com_terraform:
   stage: deploy_infrastructure
@@ -16,7 +16,7 @@ deploy_com_terraform:
       - '/usr/bin/env'
       - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
   script:
-    - echo "Iniciando Terraform..."
+    - echo "Iniciando Terraform"
     - terraform init 
     - terraform plan
     - terraform apply -auto-approve
