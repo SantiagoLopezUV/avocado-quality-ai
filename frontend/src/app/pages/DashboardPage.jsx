@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
+import ConfidencePanel from "../components/ConfidencePanel";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -62,6 +63,9 @@ export default function DashboardPage() {
 
       const fuenteDatos = data.analysis_report || data;
       const { analysis_results, business_logic, visuals } = fuenteDatos;
+      
+      // Extraer confidence_summary del response (si existe) para pasarlo al componente de confianza
+      const confidenceSummary = data.analysis_report?.confidence_summary || data.confidence_summary || null;
 
       setResult({
         // Resultados de análisis
@@ -80,6 +84,7 @@ export default function DashboardPage() {
         ripenessAdjustment: business_logic.ripeness_adjustment || 0,
         destination: business_logic.market_destination || "Calculando...",
         recommendation: `Según el análisis, este aguacate es ideal para: ${business_logic.market_destination}.`,
+        confidenceSummary: confidenceSummary, // Incluir confidence_summary en el resultado para pasarlo al componente de confianza
       });
 
       // Actualizar imagen con detecciones
@@ -257,6 +262,11 @@ export default function DashboardPage() {
                     <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">Madurez:</p>
                     <p className="text-xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors">{result.ripeness}</p>
                   </div>
+                  
+                  {/* HU-I03: Panel de confianza — se renderiza solo si el backend retorna confidence_summary */}
+                  {result.confidenceSummary && (
+                    <ConfidencePanel confidenceSummary={result.confidenceSummary} />
+                  )}
 
                   {/* Recommendations */}
                   <div className="bg-[#fff4e6] dark:bg-orange-900/30 rounded-2xl p-6 border-2 border-[#ffb020] dark:border-orange-700 transition-colors">
