@@ -26,6 +26,10 @@ class PredictorService:
             print(f"Modelo no encontrado en {self.model_path}")
             return YOLO("yolov8n.pt")  # por si no carga el modelo personalizado, se carga un modelo preentrenado como fallback
 
+
+    def load_model(self, model_name: str):# Alias para compatibilidad con código existente, para no romper lo creado
+        return self.load_model(model_name)
+
     def predict_image(self, image_path: str):
             # Realizar la predicción en la imagen dada
             #conf = 0.5 asegura que solo se consideren predicciones con una confianza del 50% o más
@@ -39,27 +43,36 @@ class PredictorService:
             #tiene manchas si el número de cajas detectadas es mayor a 0
             spots = len(res_d.boxes) > 0
 
+            # max_confidence = float(result.boxes.conf.max()) if spots else 1.0      #resultado de la confianza mas alta entre las detecciones, si no hay detecciones se asigna 1.0, lo que significa el 100% de confianza en que el aguacate está sano
+
+            detections = [] #daños detectados, con su clase y confianza, se itera sobre las cajas detectadas en el resultado y se extrae la clase y la confianza de cada una, se devuelve una lista de diccionarios con esta información para cada daño detectado
+            damage_confidences = [] #confianzas de los daños detectados, se extrae la confianza de cada caja detectada y se almacena en una lista para calcular el promedio de confianza de los daños detectados
+
+            for box in res_d.boxes:  #mostrar el resultado de la roña
+                conf_value = round(float(box.conf[0].item()) * 100, 2) #calcula la confianza de la detección actual, se multiplica por 100 para convertirla a porcentaje y se redondea a 2 decimales
+                detections.append({
+                    "class": res_d.names[int(box.cls[0].item())],
+                    "conf": round(float(box.conf[0].item()) * 100, 2)
+                })
+                damage_confidences.append(conf_value) #se agrega la confianza de la detección actual a la lista de confianzas de daños detectados
+
+            if damage_confidences:
+                damage_avg_conf = round(sum(damage_confidences) / len(damage_confidences), 2) #calcula el promedio de confianza de los daños detectados, se suma todas las confianzas y se divide entre el número de detecciones para obtener el promedio, se redondea a 2 decimales
+            else:
+                damage_avg_conf = 100.0  # Si no hay detecciones, se asigna una confianza del 100% en que el aguacate está sano, ya que el modelo no detectó ningún daño
+
             #modelo de madurez
             results_ripeness = self.model_ripeness.predict(source=image_path, conf = 0.5)
             res_r = results_ripeness[0]
 
             ripeness_category = "Unknown"
             ripeness_confidence = 0.0
+
             if len(res_r.boxes) > 0:
                 top_box = res_r.boxes[0]  # Obtener la caja con la mayor confianza
-                ripeness_category = res_r.names[int(res_r.boxes[0].cls[0].item())]
-                ripeness_confidence = round(float(res_r.boxes[0].conf[0].item()) * 100, 2)
+                ripeness_category = res_r.names[int(top_box.cls[0].item())]
+                ripeness_confidence = round(float(top_box.conf[0].item()) * 100, 2)
 
-
-            # max_confidence = float(result.boxes.conf.max()) if spots else 1.0      #resultado de la confianza mas alta entre las detecciones, si no hay detecciones se asigna 1.0, lo que significa el 100% de confianza en que el aguacate está sano
-
-            detections = [] #daños detectados, con su clase y confianza, se itera sobre las cajas detectadas en el resultado y se extrae la clase y la confianza de cada una, se devuelve una lista de diccionarios con esta información para cada daño detectado
-            for box in res_d.boxes:  #mostrar el resultado de la roña
-                detections.append({
-                    "class": res_d.names[int(box.cls[0].item())],
-                    "conf": round(float(box.conf[0].item()) * 100, 2)
-                })
-            
             #Dibujar las cajas sobre la imagen original
             plotted_image = res_d.plot()
             base64_image = ImageProcessor.encode_image_to_base64(plotted_image)
@@ -70,7 +83,8 @@ class PredictorService:
                     "health":{
                         "status": "Affected" if spots else "Healthy",
                         "spots_count": len(res_d.boxes),
-                        "detections": detections
+                        "detections": detections,
+                        "damage_confidence": damage_avg_conf, 
                     },
                     "ripeness": {
                         "level": ripeness_category,

@@ -24,6 +24,8 @@ router = APIRouter()
 
 analysis_service = AnalysisService()
 @router.post("/analyze")
+
+
 async def analyze_image(file: UploadFile = File(...)):
     """
     Analiza una imagen de aguacate y calcula su precio sugerido
@@ -51,6 +53,7 @@ async def analyze_image(file: UploadFile = File(...)):
         return {
             "filename": file.filename,
             "analysis_report": report,
+            "confidence_summary": report.get("confidence_summary", {}), #elevar confidence_summary al nivel raíz del response para acceso directo desde el frontend
             "message": "Análisis completado"
         }
     

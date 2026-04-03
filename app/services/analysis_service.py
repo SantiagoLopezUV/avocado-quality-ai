@@ -11,7 +11,6 @@ class AnalysisService:
     # Aquí la lógica para guardar la imagen, preprocesarla, etc.
     # Funcionamiento sin IA
         prediction = self.predictor.predict_image(file_path)
-
         report = prediction["analysis_report"]
         health = report["health"]
         ripeness = report["ripeness"]
@@ -24,7 +23,8 @@ class AnalysisService:
                 "health_status": health["status"],
                 "spots_found": health["spots_count"],
                 "ripeness_level": ripeness["level"],
-                "ripeness_conf": ripeness["confidence"]
+                "ripeness_conf": ripeness["confidence"],
+                "damage_conf": health["damage_confidence"],
             },
             "business_logic": {
                 # Este será calculado por PriceCalculator en analyze.py
@@ -34,6 +34,19 @@ class AnalysisService:
             "visuals": {
                 "image_base64": report["image_base64"],
                 "detections": health["detections"]
+            },
+            "confidence_summary": {
+                "damage_model": {
+                    "label": "Detección de Roña",
+                    "value": health["damage_confidence"],
+                    "display": f"{health['damage_confidence']:.1f}% de certeza"
+                },
+                "ripeness_model": {
+                    "label": "Nivel de Madurez",
+                    "value": ripeness["confidence"],
+                    "display": f"{ripeness['confidence']:.1f}% de certeza"
+                }
             }
-
         }
+                                                                                                                                                    
+        
