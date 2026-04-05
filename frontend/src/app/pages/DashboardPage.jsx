@@ -53,6 +53,16 @@ export default function DashboardPage() {
         method: "POST",
         body: formData,
       });
+      
+      // Verificar si la respuesta es un error 422 para mostrar un mensaje amigable al usuario, si el servidor rechazo la imagen por no detectar un aguacate o por baja confianza, se muestra un mensaje específico en lugar de una alerta genérica
+      if (response.status === 422) {
+        const errorData = await response.json();
+        setResult({
+          esError: true,
+          mensajeError: errorData.detail?.mensaje || "No se detectó ningún aguacate en la imagen."
+        });
+        return; // salir sin procesar más
+      }
 
       if (!response.ok) {
         throw new Error("Error en el servidor de IA");
@@ -94,13 +104,21 @@ export default function DashboardPage() {
 
     } catch (error) {
       console.error("Error conectando con la API:", error);
-      alert("Hubo un error: " + error.message);
+  
+      if(error.status === 422 || (error.message && error.message.includes("422"))){
+        setResult({
+          esError: true,
+          mensajeError: "No se detectó ningún aguacate en la foto. Asegúrese de que la imagen muestre claramente un aguacate y vuelva a intentarlo."
+        });
+      }else{
+          alert("Hubo un error: " + error.message);
+      }
     } finally {
       setAnalyzing(false);
     }
   };
 
-  return (
+ return (
     <div className="bg-[#f6f8f6] dark:bg-gray-900 min-h-screen flex flex-col transition-colors">
       {/* Header */}
       <header className="bg-[#e8f5e9] dark:bg-gray-800 border-b-2 border-[#c5e1a5] dark:border-gray-700 px-6 py-6 sticky top-0 z-50 transition-colors">
@@ -135,7 +153,7 @@ export default function DashboardPage() {
               <h2 className="text-4xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors">Revise Su Cosecha</h2>
             </div>
             <p className="text-xl text-[#475569] dark:text-gray-400 leading-relaxed transition-colors">
-              Súbale una foto a sus aguacates y la inteligencia artificial le dice cómo están. 
+              Súbale una foto a sus aguacates y la inteligencia artificial le dice cómo están.
               Es facilito y rapidito.
             </p>
           </div>
@@ -229,7 +247,51 @@ export default function DashboardPage() {
 
             {/* Right Side - Results */}
             <div>
-              {result ? (
+              {result?.esError ? (
+                // HU-I07: pantalla de error cuando la imagen no es un aguacate
+                <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors">
+                  <div className="flex flex-col items-center text-center gap-6">
+                    <span className="text-8xl">🚫</span>
+                    <h3 className="text-2xl font-bold text-red-500 dark:text-red-400">
+                      Imagen no válida
+                    </h3>
+                    <p className="text-xl text-[#475569] dark:text-gray-300 leading-relaxed">
+                      {result.mensajeError}
+                    </p>
+                    <div className="bg-[#fff4e6] dark:bg-orange-900/30 rounded-2xl p-5 border-2 border-[#ffb020] dark:border-orange-700 w-full">
+                      <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 mb-3">
+                        💡 Consejos para una buena foto:
+                      </p>
+                      <ul className="space-y-2 text-left text-lg text-[#475569] dark:text-gray-300">
+                        <li className="flex items-center gap-2">
+                          <span className="text-[#8bc34a]">✓</span>
+                          Que se vea claramente el aguacate completo
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="text-[#8bc34a]">✓</span>
+                          Fondo limpio sin otros objetos
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="text-[#8bc34a]">✓</span>
+                          Buena iluminación sin reflejos directos
+                        </li>
+                      </ul>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedImage(null);
+                        setImageFile(null);
+                        setResult(null);
+                      }}
+                      className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-4 rounded-2xl text-xl font-bold hover:bg-[#7cb342] transition-colors"
+                    >
+                      Intentar con otra foto
+                    </button>
+                  </div>
+                </div>
+
+              ) : result ? (
+                // Resultados normales del análisis
                 <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 space-y-6 transition-colors">
                   <div className="flex items-center gap-3 mb-4">
                     <span className="text-4xl">✅</span>
@@ -262,8 +324,8 @@ export default function DashboardPage() {
                     <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 mb-2 transition-colors">Madurez:</p>
                     <p className="text-xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors">{result.ripeness}</p>
                   </div>
-                  
-                  {/* HU-I03: Panel de confianza — se renderiza solo si el backend retorna confidence_summary */}
+
+                  {/* HU-I03: Panel de confianza */}
                   {result.confidenceSummary && (
                     <ConfidencePanel confidenceSummary={result.confidenceSummary} />
                   )}
@@ -279,9 +341,8 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* NUEVA SECCIÓN: Cálculo de Precio */}
+                  {/* Cálculo de Precio */}
                   <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800 rounded-3xl p-6 border-2 border-[#8bc34a] dark:border-[#9ccc65] shadow-lg transition-colors">
-                    {/* Título */}
                     <div className="flex items-center gap-3 mb-6">
                       <span className="text-4xl">💰</span>
                       <h4 className="text-2xl font-bold text-[#0d1b0d] dark:text-gray-100">Cálculo del Precio</h4>
@@ -303,7 +364,7 @@ export default function DashboardPage() {
                       </p>
                     </div>
 
-                    {/* Desglose del Cálculo */}
+                    {/* Desglose */}
                     <div className="space-y-3">
                       <p className="text-lg font-bold text-[#0d1b0d] dark:text-gray-100 mb-3 flex items-center gap-2">
                         <span>📊</span>
@@ -327,8 +388,8 @@ export default function DashboardPage() {
                       {/* Descuento por Calidad */}
                       {result.qualityDiscount !== 0 && (
                         <div className={`rounded-xl p-4 flex justify-between items-center ${
-                          result.qualityDiscount > 0 
-                            ? 'bg-red-50 dark:bg-red-900/20' 
+                          result.qualityDiscount > 0
+                            ? 'bg-red-50 dark:bg-red-900/20'
                             : 'bg-green-50 dark:bg-green-900/20'
                         }`}>
                           <div className="flex items-center gap-3">
@@ -338,15 +399,15 @@ export default function DashboardPage() {
                                 {result.qualityDiscount > 0 ? 'Descuento por Daños' : 'Sin Descuentos'}
                               </p>
                               <p className="text-sm text-[#475569] dark:text-gray-400">
-                                {result.qualityDiscount > 0 
-                                  ? 'Manchas o roña detectada' 
+                                {result.qualityDiscount > 0
+                                  ? 'Manchas o roña detectada'
                                   : 'Aguacate en perfecto estado'}
                               </p>
                             </div>
                           </div>
                           <span className={`text-xl font-bold ${
-                            result.qualityDiscount > 0 
-                              ? 'text-red-600 dark:text-red-400' 
+                            result.qualityDiscount > 0
+                              ? 'text-red-600 dark:text-red-400'
                               : 'text-green-600 dark:text-green-400'
                           }`}>
                             {result.qualityDiscount > 0 ? '-' : ''}${Math.abs(result.qualityDiscount)?.toLocaleString('es-CO')}
@@ -357,8 +418,8 @@ export default function DashboardPage() {
                       {/* Ajuste por Madurez */}
                       {result.ripenessAdjustment !== 0 && (
                         <div className={`rounded-xl p-4 flex justify-between items-center ${
-                          result.ripenessAdjustment < 0 
-                            ? 'bg-orange-50 dark:bg-orange-900/20' 
+                          result.ripenessAdjustment < 0
+                            ? 'bg-orange-50 dark:bg-orange-900/20'
                             : 'bg-blue-50 dark:bg-blue-900/20'
                         }`}>
                           <div className="flex items-center gap-3">
@@ -371,8 +432,8 @@ export default function DashboardPage() {
                             </div>
                           </div>
                           <span className={`text-xl font-bold ${
-                            result.ripenessAdjustment > 0 
-                              ? 'text-green-600 dark:text-green-400' 
+                            result.ripenessAdjustment > 0
+                              ? 'text-green-600 dark:text-green-400'
                               : 'text-orange-600 dark:text-orange-400'
                           }`}>
                             {result.ripenessAdjustment > 0 ? '+' : ''}${result.ripenessAdjustment?.toLocaleString('es-CO')}
@@ -380,7 +441,7 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* Línea de Total */}
+                      {/* Total */}
                       <div className="border-t-2 border-[#8bc34a] dark:border-[#9ccc65] pt-4 mt-4">
                         <div className="bg-[#8bc34a] dark:bg-[#7cb342] rounded-xl p-4 flex justify-between items-center">
                           <div className="flex items-center gap-3">
@@ -393,17 +454,15 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Nota Explicativa */}
+                      {/* Nota */}
                       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mt-4">
                         <div className="flex items-start gap-3">
                           <span className="text-2xl">ℹ️</span>
                           <div>
-                            <p className="text-sm font-semibold text-[#0d1b0d] dark:text-gray-200 mb-1">
-                              ¿Por qué este precio?
-                            </p>
+                            <p className="text-sm font-semibold text-[#0d1b0d] dark:text-gray-200 mb-1">¿Por qué este precio?</p>
                             <p className="text-sm text-[#475569] dark:text-gray-400 leading-relaxed">
-                              Este precio se calculó automáticamente según la calidad detectada por la IA, 
-                              el estado de madurez y el precio actual del mercado. Es justo, competitivo y 
+                              Este precio se calculó automáticamente según la calidad detectada por la IA,
+                              el estado de madurez y el precio actual del mercado. Es justo, competitivo y
                               refleja el valor real de su cosecha.
                             </p>
                           </div>
@@ -423,7 +482,9 @@ export default function DashboardPage() {
                     Analizar Otra Foto
                   </button>
                 </div>
+
               ) : (
+                // Estado inicial — esperando que suban una foto
                 <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-12 text-center h-full flex items-center justify-center transition-colors">
                   <div>
                     <div className="text-8xl mb-6">🔬</div>
