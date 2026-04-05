@@ -11,6 +11,14 @@ class AnalysisService:
     # Aquí la lógica para guardar la imagen, preprocesarla, etc.
     # Funcionamiento sin IA
         prediction = self.predictor.predict_image(file_path)
+
+        print(f"Debug analysis_service | avocado_detected: {prediction.get('avocado_detected')}")
+        print(f"Debug analysis_service | keys: {list(prediction.keys())}")
+
+        # Si el modelo no detecta un aguacate, se devuelve None para que el endpoint pueda manejarlo y retornar un error adecuado al usuario
+        if not prediction.get("avocado_detected", True):
+            return None
+        
         report = prediction["analysis_report"]
         health = report["health"]
         ripeness = report["ripeness"]
