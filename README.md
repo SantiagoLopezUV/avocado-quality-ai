@@ -164,7 +164,7 @@ Requisitos Previos:
 # http://localhost:8000/docs correr la app inicialmente
 
 
-# CONTENERIZACIÓN DEL PROYECTO
+## CONTENERIZACIÓN DEL PROYECTO
 
 *¿Qué problema soluciona Docker?*
 

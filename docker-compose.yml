@@ -31,13 +31,16 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev        # desarrollo con hot reload
+      #dockerfile: Dockerfile           # producción con Nginx
     container_name: agrodata-web
     ports:
-      - "80:80"
+      - "5173:5173"                     # ← puerto para desarrollo con Vite
+      #- "80:80"                        # ← descomentar para producción
     volumes:
-      - ./frontend:/app # Monta el directorio frontend en /app dentro del contenedor
-      - /app/node_modules # Evita que los node_modules del host se monten en el contenedor, lo que puede causar problemas de compatibilidad
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host      # ← necesario para que Vite escuche fuera del contenedor
     depends_on:
       - backend
 

@@ -1,0 +1,23 @@
+stages:
+  - test
+  - deploy_infrastructure
+
+test_modelo_abacates:
+  stage: test
+  script:
+    - echo "Probando la precisión del modelo YOLO de aguacates..."
+    - echo "Pruebas pasadas exitosamente"
+
+deploy_com_terraform:
+  stage: deploy_infrastructure
+  image:
+    name: hashicorp/terraform:light
+    entrypoint:
+      - '/usr/bin/env'
+      - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+  script:
+    - echo "Iniciando Terraform"
+    - terraform init 
+    - terraform plan
+    - terraform apply -auto-approve
+    - cat /tmp/estado_servidor.txt

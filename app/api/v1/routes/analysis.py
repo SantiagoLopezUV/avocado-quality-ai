@@ -1,6 +1,8 @@
-from fastapi import APIRouter, File, UploadFile
+from http.client import HTTPException
+
+from fastapi import APIRouter, File, UploadFile, HTTPException
 from app.services.price_calculator import PriceCalculator
-from app.services import predictor_service
+from app.services import predictor_service 
 # Importamos la función de análisis de aguacate desde el archivo analysis_service.py
 from app.services.analysis_service import AnalysisService
 import shutil
@@ -24,6 +26,8 @@ router = APIRouter()
 
 analysis_service = AnalysisService()
 @router.post("/analyze")
+
+
 async def analyze_image(file: UploadFile = File(...)):
     """
     Analiza una imagen de aguacate y calcula su precio sugerido
@@ -38,6 +42,14 @@ async def analyze_image(file: UploadFile = File(...)):
     try:
         # 2. Analizar con IA
         report = await analysis_service.analyze_avocado(temp_path)
+
+        if report is None:
+            raise HTTPException(
+                status_code=422, 
+                detail={"Error": "imagen no válida o modelo no pudo analizarla",
+                    "Mensaje": "No se detectó ningún aguacate en la imagen. Por favor suba una foto clara de su aguacate."
+                }
+            )
         
         # 3. EXTRAER analysis_results
         analysis_results = report.get("analysis_results", {})
@@ -51,6 +63,7 @@ async def analyze_image(file: UploadFile = File(...)):
         return {
             "filename": file.filename,
             "analysis_report": report,
+            "confidence_summary": report.get("confidence_summary", {}), #elevar confidence_summary al nivel raíz del response para acceso directo desde el frontend
             "message": "Análisis completado"
         }
     
