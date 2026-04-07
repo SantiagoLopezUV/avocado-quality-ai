@@ -66,3 +66,4 @@ Proceso de despliegue automatizado (ejecutado por el Runner):
 ### Verificación:
 Para comprobar que la infraestructura se desplegó correctamente, se revisan los logs del Job deploy_com_terraform en GitLab. Al final de la ejecución, el sistema imprimirá el estado en vivo del servidor recién aprovisionado.
 
+HOLA 
