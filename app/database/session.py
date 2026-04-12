@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
 DATABASE_URL = settings.DATABASE_URL
@@ -10,5 +10,15 @@ SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine)
+
+
+# Dependencia para FastAPI (inyección en endpoints)
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 #Base = declarative_base()
