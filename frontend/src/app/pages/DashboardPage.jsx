@@ -3,10 +3,17 @@ import { useNavigate } from "react-router";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
 import ConfidencePanel from "../components/ConfidencePanel";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
   // Estados
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
@@ -139,6 +146,15 @@ export default function DashboardPage() {
               </button>
             </nav>
             <ThemeToggle />
+            {user && (
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+              >
+                <span>🚪</span>
+                Salir
+              </button>
+            )}
           </div>
         </div>
       </header>

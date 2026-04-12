@@ -72,6 +72,13 @@ export default function ProfilePage() {
               </button>
             </nav>
             <ThemeToggle />
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+            >
+              <span>🚪</span>
+              Salir
+            </button>
           </div>
         </div>
       </header>
