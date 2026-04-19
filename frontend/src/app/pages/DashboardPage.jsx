@@ -5,9 +5,11 @@ import ThemeToggle from "../components/ThemeToggle";
 import ConfidencePanel from "../components/ConfidencePanel";
 import { useAuth } from "../contexts/AuthContext";
 
+const API_BASE = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8001"}/api/v1`;
+
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, getToken } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -55,9 +57,14 @@ export default function DashboardPage() {
     const formData = new FormData();
     formData.append("file", imageFile);
 
+    const token = getToken();
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/v1/analyze", {
+      const response = await fetch(`${API_BASE}/analyze`, {
         method: "POST",
+        headers,
         body: formData,
       });
       
@@ -78,36 +85,50 @@ export default function DashboardPage() {
       const data = await response.json();
       console.log("🥑 DATOS DE LA IA:", data);
 
-      const fuenteDatos = data.analysis_report || data;
-      const { analysis_results, business_logic, visuals } = fuenteDatos;
-      
-      // Extraer confidence_summary del response (si existe) para pasarlo al componente de confianza
-      const confidenceSummary = data.analysis_report?.confidence_summary || data.confidence_summary || null;
+      // HU-I03: construir confidence_summary desde la nueva estructura plana del backend v2
+      const confidenceSummary = {
+        damage_model: {
+          label: "Detección de Roña",
+          value: data.damage_confidence || 0,
+          display: `${(data.damage_confidence || 0).toFixed(1)}% de certeza`,
+        },
+        ripeness_model: {
+          label: "Nivel de Madurez",
+          value: data.ripeness_confidence || 0,
+          display: `${(data.ripeness_confidence || 0).toFixed(1)}% de certeza`,
+        },
+      };
 
       setResult({
-        // Resultados de análisis
-        health: analysis_results.health_status === "Healthy" ? "Sano y Limpio" : "Afectado (Con Roña)",
-        healthPercent: Math.round(analysis_results.ripeness_conf || 0),
-        disease: analysis_results.spots_found > 0 
-          ? `Se detectaron ${analysis_results.spots_found} mancha(s)` 
+        // Estado de salud
+        health: data.damage_level === "Healthy" ? "Sano y Limpio" : "Afectado (Con Roña)",
+        healthPercent: Math.round(data.damage_confidence || 0),
+        disease: data.detections?.length > 0
+          ? `Se detectaron ${data.detections.length} mancha(s)`
           : "Ninguna detectada",
-        ripeness: ripinnesLevel(analysis_results.ripeness_level),
-        ripenessConf: Math.round(analysis_results.ripeness_conf),
-        
-        // Lógica de negocio
-        suggestedPrice: business_logic.suggested_price || 0,
-        basePrice: business_logic.base_price || 0,
-        qualityDiscount: business_logic.quality_discount || 0,
-        ripenessAdjustment: business_logic.ripeness_adjustment || 0,
-        destination: business_logic.market_destination || "Calculando...",
-        recommendation: `Según el análisis, este aguacate es ideal para: ${business_logic.market_destination}.`,
-        confidenceSummary: confidenceSummary, // Incluir confidence_summary en el resultado para pasarlo al componente de confianza
+
+        // Madurez
+        ripeness: ripinnesLevel(data.ripeness_level),
+        ripenessConf: Math.round(data.ripeness_confidence || 0),
+
+        // Precio — el backend v2 retorna price_sale y price_purchase
+        suggestedPrice: data.price_sale || 0,
+        basePrice: data.price_purchase || 0,
+        qualityDiscount: 0,
+        ripenessAdjustment: 0,
+        destination: data.market_destination || "Calculando...",
+        recommendation: `Según el análisis, este aguacate es ideal para: ${data.market_destination}.`,
+
+        // HU-I03
+        confidenceSummary: confidenceSummary,
       });
 
-      // Actualizar imagen con detecciones
-      if (visuals && visuals.image_base64) {
-        setSelectedImage(`data:image/jpeg;base64,${visuals.image_base64}`);
+      // Imagen anotada con bounding boxes
+      if (data.image_base64) {
+        setSelectedImage(`data:image/jpeg;base64,${data.image_base64}`);
       }
+
+
 
     } catch (error) {
       console.error("Error conectando con la API:", error);
@@ -141,6 +162,11 @@ export default function DashboardPage() {
               <button onClick={() => navigate("/marketplace")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
                 Mi Plaza
               </button>
+              {user && (
+                <button onClick={() => navigate("/history")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
+                  Mi Historial
+                </button>
+              )}
               <button onClick={() => navigate("/profile")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
                 Mi Perfil
               </button>

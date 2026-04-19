@@ -1,5 +1,5 @@
 // Servicio centralizado para todas las llamadas a la API
-const API_BASE_URL = "http://127.0.0.1:8000/api/v1";
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8001"}/api/v1`;
 
 /**
  * Función auxiliar para manejar respuestas de la API
@@ -167,6 +167,22 @@ export async function resetPassword(token, newPassword) {
     return await handleResponse(response);
   } catch (error) {
     console.error("Error restableciendo contraseña:", error);
+    throw error;
+  }
+}
+
+export async function getAnalysisHistory(token, limit = 20) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/history?limit=${limit}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,  // ← JWT
+      },
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error("Error obteniendo historial:", error);
     throw error;
   }
 }
