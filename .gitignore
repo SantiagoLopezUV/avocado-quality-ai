@@ -236,7 +236,14 @@ dist/
 # Ignorar entorno de Python (Backend)
 venv/
 .env
+.env.v2
 __pycache__/
+
+# Imágenes subidas por usuarios
+uploads/
+
+# Variables de entorno del frontend
+frontend/.env.local
 
 # Archivos de sistema
 .DS_Store
