@@ -8,7 +8,18 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [editMode, setEditMode] = useState(false);
-  
+  const [profile, setProfile] = useState({
+    name: user?.name || "Usuario",
+    farm: "Finca La Esperanza",
+    location: user?.location || "Valle del Cauca",
+    phone: user?.phone || "No registrado",
+    email: user?.email || "No registrado",
+    document_number: user?.document_number || "No registrado",
+    experience: "25 años cultivando aguacate",
+    area: "15 hectáreas",
+    certification: "Certificado ICA",
+  });
+
   // Si no hay usuario logueado, redirigir al login
   useEffect(() => {
     if (!user) {
@@ -20,17 +31,6 @@ export default function ProfilePage() {
   if (!user) {
     return null;
   }
-  const [profile, setProfile] = useState({
-    name: user.name || "Usuario",
-    farm: "Finca La Esperanza",
-    location: user.location || "Valle del Cauca",
-    phone: user.phone || "No registrado",
-    email: user.email || "No registrado",
-    document_number: user.document_number || "No registrado",
-    experience: "25 años cultivando aguacate",
-    area: "15 hectáreas",
-    certification: "Certificado ICA",
-  });
 
   const handleLogout = () => {
     logout();
@@ -66,6 +66,9 @@ export default function ProfilePage() {
               </button>
               <button onClick={() => navigate("/marketplace")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
                 Mi Plaza
+              </button>
+              <button onClick={() => navigate("/history")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
+                Mi Historial
               </button>
               <button onClick={() => navigate("/profile")} className="text-lg text-[#8bc34a] dark:text-[#9ccc65] font-bold border-b-4 border-[#8bc34a] dark:border-[#9ccc65] pb-1 transition-colors">
                 Mi Perfil

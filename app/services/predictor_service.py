@@ -79,7 +79,8 @@ class PredictorService:
 
             # max_confidence = float(result.boxes.conf.max()) if spots else 1.0      #resultado de la confianza mas alta entre las detecciones, si no hay detecciones se asigna 1.0, lo que significa el 100% de confianza en que el aguacate está sano
 
-            detections = [] #daños detectados, con su clase y confianza, se itera sobre las cajas detectadas en el resultado y se extrae la clase y la confianza de cada una, se devuelve una lista de diccionarios con esta información para cada daño detectado
+            detections = [] #daños detectados, con su clase y confianza, se itera sobre las cajas detectadas en el resultado y 
+            #se extrae la clase y la confianza de cada una, se devuelve una lista de diccionarios con esta información para cada daño detectado
             damage_confidences = [] #confianzas de los daños detectados, se extrae la confianza de cada caja detectada y se almacena en una lista para calcular el promedio de confianza de los daños detectados
 
             for box in res_d.boxes:  #mostrar el resultado de la roña
