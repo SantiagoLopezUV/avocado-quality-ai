@@ -233,7 +233,7 @@ export default function DashboardPage() {
                       <img
                         src={selectedImage}
                         alt="Aguacate pa' analizar"
-                        className="w-full h-80 object-cover"
+                        className="w-full h-auto"
                       />
                       <button
                         onClick={() => {
