@@ -32,17 +32,7 @@ export function AuthProvider({ children }) {
   const register = async (userData) => {
     try {
       const newUser = await apiRegister(userData);
-      const userToStore = {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        phone: newUser.phone,
-        location: newUser.location,
-        document_number: newUser.document_number,
-      };
-      setUser(userToStore);
-      localStorage.setItem("avocado_user", JSON.stringify(userToStore));
-      return { success: true, user: userToStore };
+      return { success: true, user: newUser };
     } catch (error) {
       return { success: false, error: error.message };
     }

@@ -11,10 +11,12 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
     setLoading(true);
 
     try {
@@ -42,9 +44,10 @@ export default function LoginPage() {
         };
 
         const result = await register(userData);
-        
+
         if (result.success) {
-          navigate("/dashboard");
+          setSuccessMessage(`¡Cuenta creada con éxito! Ya puede iniciar sesión, ${result.user.name.split(" ")[0]}.`);
+          setIsLogin(true);
         } else {
           setError(result.error || "Error al registrarse");
         }
@@ -137,26 +140,36 @@ export default function LoginPage() {
               {/* Toggle */}
               <div className="bg-[#f3f7f3] dark:bg-gray-700 p-2 rounded-2xl flex gap-2 transition-colors">
                 <button
-                  onClick={() => setIsLogin(true)}
+                  onClick={() => { setIsLogin(true); setError(""); setSuccessMessage(""); }}
                   className={`flex-1 py-3 rounded-xl text-lg font-semibold transition-all ${
-                    isLogin 
-                      ? "bg-white dark:bg-gray-600 shadow-md text-[#0d1b0d] dark:text-gray-100" 
+                    isLogin
+                      ? "bg-white dark:bg-gray-600 shadow-md text-[#0d1b0d] dark:text-gray-100"
                       : "text-[#1a2e1a] dark:text-gray-400 opacity-60"
                   }`}
                 >
                   Entrar
                 </button>
                 <button
-                  onClick={() => setIsLogin(false)}
+                  onClick={() => { setIsLogin(false); setError(""); setSuccessMessage(""); }}
                   className={`flex-1 py-3 rounded-xl text-lg font-semibold transition-all ${
-                    !isLogin 
-                      ? "bg-white dark:bg-gray-600 shadow-md text-[#0d1b0d] dark:text-gray-100" 
+                    !isLogin
+                      ? "bg-white dark:bg-gray-600 shadow-md text-[#0d1b0d] dark:text-gray-100"
                       : "text-[#1a2e1a] dark:text-gray-400 opacity-60"
                   }`}
                 >
                   Registrarse
                 </button>
               </div>
+
+              {/* Success Message */}
+              {successMessage && (
+                <div className="bg-green-50 dark:bg-green-900/30 border-2 border-green-200 dark:border-green-800 rounded-2xl p-4 transition-colors">
+                  <p className="text-green-800 dark:text-green-200 text-base font-semibold flex items-center gap-2">
+                    <span className="text-2xl">✅</span>
+                    {successMessage}
+                  </p>
+                </div>
+              )}
 
               {/* Error Message */}
               {error && (
