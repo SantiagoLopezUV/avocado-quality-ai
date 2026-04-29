@@ -31,27 +31,21 @@ class AnalysisRepository:
     def save_image(
         self,
         image_id: uuid.UUID,
-        user_id: uuid.UUID,
-        filename: str,
         file_path: str,
-        content_type: str,
         now: datetime,
     ) -> None:
         """Inserta un registro en la tabla images."""
         self.db.execute(
             text(
                 """
-                INSERT INTO images (id, user_id, filename, file_path, content_type, created_at)
-                VALUES (:id, :user_id, :filename, :file_path, :content_type, :created_at)
+                INSERT INTO images (id, file_path, uploaded_at)
+                VALUES (:id, :file_path, :uploaded_at)
                 """
             ),
             {
                 "id": image_id,
-                "user_id": user_id,
-                "filename": filename,
                 "file_path": file_path,
-                "content_type": content_type,
-                "created_at": now,
+                "uploaded_at": now,
             },
         )
 
@@ -60,45 +54,31 @@ class AnalysisRepository:
         analysis_id: uuid.UUID,
         user_id: uuid.UUID,
         image_id: uuid.UUID,
-        model_version_id: uuid.UUID,
-        ripeness_level: str,
-        damage_level: str,
-        confidence: float,
         now: datetime,
     ) -> None:
         """Inserta un registro en la tabla analyses."""
         self.db.execute(
             text(
                 """
-                INSERT INTO analyses (
-                    id, user_id, image_id, model_version_id,
-                    ripeness_level, damage_level, confidence,
-                    created_at, updated_at
-                )
-                VALUES (
-                    :id, :user_id, :image_id, :model_version_id,
-                    :ripeness_level, :damage_level, :confidence,
-                    :created_at, :updated_at
-                )
+                INSERT INTO analyses (id, user_id, image_id, created_at)
+                VALUES (:id, :user_id, :image_id, :created_at)
                 """
             ),
             {
                 "id": analysis_id,
                 "user_id": user_id,
                 "image_id": image_id,
-                "model_version_id": model_version_id,
-                "ripeness_level": ripeness_level,
-                "damage_level": damage_level,
-                "confidence": confidence,
                 "created_at": now,
-                "updated_at": now,
             },
         )
-
     def save_analysis_result(
         self,
         result_id: uuid.UUID,
         analysis_id: uuid.UUID,
+        model_version_id: uuid.UUID,
+        ripeness_level: str,
+        damage_level: str,
+        confidence: float,
         price_sale: float,
         price_purchase: float,
         message: str,
@@ -109,13 +89,14 @@ class AnalysisRepository:
             text(
                 """
                 INSERT INTO analysis_results (
-                    id, analysis_id,
-                    price_sale, price_purchase,
-                    message, created_at
+                    id, analysis_id, model_version_id,
+                    ripeness_level, damage_level, confidence,
+                    price_sale, price_purchase, message, created_at
                 )
                 VALUES (
-                    :id, :analysis_id,
-                    :price_sale, :price_purchase,
+                    :id, :analysis_id, :model_version_id,
+                    CAST(:ripeness_level AS ripeness_enum), CAST(:damage_level AS damage_enum),
+                    :confidence, :price_sale, :price_purchase,
                     :message, :created_at
                 )
                 """
@@ -123,6 +104,10 @@ class AnalysisRepository:
             {
                 "id": result_id,
                 "analysis_id": analysis_id,
+                "model_version_id": model_version_id,
+                "ripeness_level": ripeness_level,
+                "damage_level": damage_level,
+                "confidence": confidence / 100,  # BD guarda 0-1, modelo retorna 0-100
                 "price_sale": price_sale,
                 "price_purchase": price_purchase,
                 "message": message,
@@ -134,9 +119,7 @@ class AnalysisRepository:
         self,
         *,
         user_id: uuid.UUID,
-        filename: str,
         file_path: str,
-        content_type: str,
         ripeness_level: str,
         damage_level: str,
         confidence: float,
@@ -159,26 +142,26 @@ class AnalysisRepository:
         analysis_id = uuid.uuid4()
         result_id = uuid.uuid4()
 
-        self.save_image(image_id, user_id, filename, file_path, content_type, now)
-        self.save_analysis(
-            analysis_id, user_id, image_id, model_version_id,
-            ripeness_level, damage_level, confidence, now,
+        self.save_image(image_id, file_path, now)
+        self.save_analysis(analysis_id, user_id, image_id, now)
+        self.save_analysis_result(
+            result_id, analysis_id, model_version_id,
+            ripeness_level, damage_level, confidence,
+            price_sale, price_purchase, message, now,
         )
-        self.save_analysis_result(result_id, analysis_id, price_sale, price_purchase, message, now)
 
         self.db.commit()
         return analysis_id, image_id
 
     def get_history(self, user_id: uuid.UUID, limit: int = 20) -> list:
-        """Historial de análisis de un usuario."""
         rows = self.db.execute(
             text(
                 """
                 SELECT
-                    a.id            AS analysis_id,
-                    a.ripeness_level,
-                    a.damage_level,
-                    a.confidence,
+                    a.id              AS analysis_id,
+                    ar.ripeness_level,
+                    ar.damage_level,
+                    ar.confidence,
                     ar.price_sale,
                     ar.price_purchase,
                     ar.message,
@@ -211,9 +194,9 @@ class AnalysisRepository:
                 """
                 SELECT
                     a.id              AS analysis_id,
-                    a.ripeness_level,
-                    a.damage_level,
-                    a.confidence,
+                    ar.ripeness_level,
+                    ar.damage_level,
+                    ar.confidence,
                     ar.price_sale,
                     ar.price_purchase,
                     ar.message,
@@ -250,9 +233,9 @@ class AnalysisRepository:
                 SELECT
                     a.id              AS analysis_id,
                     a.user_id,
-                    a.ripeness_level,
-                    a.damage_level,
-                    a.confidence,
+                    ar.ripeness_level,
+                    ar.damage_level,
+                    ar.confidence,
                     ar.price_sale,
                     ar.price_purchase,
                     ar.message,

@@ -29,6 +29,8 @@ class UserService:
     def create_user(self, user_create: UserCreate) -> User:
         if self.user_repository.email_exists(user_create.email):
             raise ValueError("Email already registered")
+        if self.user_repository.get_user_by_document_number(user_create.document_number):
+            raise ValueError("Número de documento ya registrado")
 
         hashed_password = self.hash_password(user_create.password)
         user = User(

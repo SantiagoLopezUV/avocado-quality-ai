@@ -1,4 +1,4 @@
-# from http.client import HTTPException
+from http.client import HTTPException
 
 # from fastapi import APIRouter, File, UploadFile, HTTPException
 # from app.services.price_calculator import PriceCalculator
@@ -217,28 +217,50 @@ async def analyze_image(
                 },
             )
 
-        # 3. Extraer resultados del modelo (misma estructura que tenías)
+        # 3. Extraer resultados del modelo 
         analysis_results = report.get("analysis_results", {})
         business_logic = PriceCalculator.calculate(analysis_results)
         visuals = report.get("visuals", {})
 
-        ripeness_level: str = analysis_results.get("ripeness_level", "desconocido")
-        damage_level: str   = analysis_results.get("health_status", "desconocido")
+        # Mapeo inglés → español para los ENUMs de la BD
+        RIPENESS_MAP = {
+            "Underripe":  "verde",
+            "Ripening":   "verde",
+            "Ripe":       "maduro",
+            "Overripe":   "sobremaduro",
+            "Unknown":    "verde",
+        }
+        DAMAGE_MAP = {
+            "Healthy":  "ninguno",
+            "Affected": "moderado",
+        }
+
+        # Valores originales en inglés — para el response al frontend
+        ripeness_level_raw: str = analysis_results.get("ripeness_level", "Unknown")
+        damage_level_raw: str   = analysis_results.get("health_status", "Healthy")
+
+        # Valores traducidos al español — para guardar en la BD
+        ripeness_level_db: str = RIPENESS_MAP.get(ripeness_level_raw, "verde")
+        damage_level_db: str   = DAMAGE_MAP.get(damage_level_raw, "ninguno")
+
+        # ripeness_level: str = analysis_results.get("ripeness_level", "desconocido")
+        # damage_level: str   = analysis_results.get("health_status", "desconocido")
+
         ripeness_conf: float = float(analysis_results.get("ripeness_conf", 0))
         damage_conf: float   = float(analysis_results.get("damage_conf", 0))
-        price_sale: float    = float(business_logic.get("precio_venta", 0))
-        price_purchase: float = float(business_logic.get("precio_compra", 0))
+        price_sale: float     = float(business_logic.get("suggested_price", 0))
+        price_purchase: float = float(business_logic.get("base_price", 0))
         market_dest: str     = business_logic.get("market_destination", report.get("business_logic", {}).get("market_destination", ""))
 
         avg_confidence = (ripeness_conf + damage_conf) / 2
-        message = build_message(ripeness_level, damage_level, avg_confidence)
+        message = build_message(ripeness_level_db, damage_level_db, avg_confidence)
         now = datetime.now(timezone.utc)
 
         # 4. Si es anónimo → respuesta directa sin persistir en BD
         if user_id is None:
             return AnalysisResultOut(
-                ripeness_level=ripeness_level,
-                damage_level=damage_level,
+                ripeness_level=ripeness_level_raw,
+                damage_level=damage_level_raw,
                 ripeness_confidence=ripeness_conf,
                 damage_confidence=damage_conf,
                 price_sale=price_sale,
@@ -256,11 +278,9 @@ async def analyze_image(
             repo = AnalysisRepository(db)
             analysis_id, image_id = repo.persist_full_analysis(
                 user_id=user_id,
-                filename=filename,
                 file_path=f"{settings.UPLOAD_DIR}/{filename}",
-                content_type=file.content_type or "image/jpeg",
-                ripeness_level=ripeness_level,
-                damage_level=damage_level,
+                ripeness_level=ripeness_level_db,
+                damage_level=damage_level_db,
                 confidence=avg_confidence,
                 price_sale=price_sale,
                 price_purchase=price_purchase,
@@ -278,8 +298,8 @@ async def analyze_image(
         return AnalysisResultOut(
             analysis_id=analysis_id,
             image_id=image_id,
-            ripeness_level=ripeness_level,
-            damage_level=damage_level,
+            ripeness_level=ripeness_level_raw,
+            damage_level=damage_level_raw,
             ripeness_confidence=ripeness_conf,
             damage_confidence=damage_conf,
             price_sale=price_sale,
