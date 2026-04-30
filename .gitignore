@@ -248,3 +248,6 @@ frontend/.env.local
 # Archivos de sistema
 .DS_Store
 Thumbs.db
+
+# Claude
+.claude/

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
@@ -6,6 +6,7 @@ import ConfidencePanel from "../components/ConfidencePanel";
 import { useAuth } from "../contexts/AuthContext";
 
 const API_BASE = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8001"}/api/v1`;
+const DIAGNOSIS_KEY = "avocado_active_diagnosis";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -21,6 +22,30 @@ export default function DashboardPage() {
   const [imageFile, setImageFile] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
+
+  // HU-F08: restaurar diagnóstico activo desde sessionStorage al montar
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(DIAGNOSIS_KEY);
+      if (saved) {
+        const { result: savedResult, selectedImage: savedImage } = JSON.parse(saved);
+        if (savedResult && savedImage) {
+          setResult(savedResult);
+          setSelectedImage(savedImage);
+        }
+      }
+    } catch {
+      sessionStorage.removeItem(DIAGNOSIS_KEY);
+    }
+  }, []);
+
+  // HU-F08: limpiar diagnóstico activo (imagen + resultados + sesión)
+  const clearDiagnosis = () => {
+    setSelectedImage(null);
+    setImageFile(null);
+    setResult(null);
+    sessionStorage.removeItem(DIAGNOSIS_KEY);
+  };
 
   // Traducir niveles de madurez
   const ripinnesLevel = (level) => {
@@ -99,7 +124,7 @@ export default function DashboardPage() {
         },
       };
 
-      setResult({
+      const newResult = {
         // Estado de salud
         health: data.damage_level === "Healthy" ? "Sano y Limpio" : "Afectado (Con Roña)",
         healthPercent: Math.round(data.damage_confidence || 0),
@@ -121,11 +146,27 @@ export default function DashboardPage() {
 
         // HU-I03
         confidenceSummary: confidenceSummary,
-      });
+      };
 
-      // Imagen anotada con bounding boxes
+      // HU-F08: imagen anotada con bounding boxes o la original subida
+      const newSelectedImage = data.image_base64
+        ? `data:image/jpeg;base64,${data.image_base64}`
+        : selectedImage;
+
+      setResult(newResult);
+
       if (data.image_base64) {
-        setSelectedImage(`data:image/jpeg;base64,${data.image_base64}`);
+        setSelectedImage(newSelectedImage);
+      }
+
+      // HU-F08: persistir diagnóstico activo en sessionStorage
+      try {
+        sessionStorage.setItem(DIAGNOSIS_KEY, JSON.stringify({
+          result: newResult,
+          selectedImage: newSelectedImage,
+        }));
+      } catch {
+        // sessionStorage no disponible o lleno, continuar sin persistir
       }
 
 
@@ -236,10 +277,7 @@ export default function DashboardPage() {
                         className="w-full h-auto"
                       />
                       <button
-                        onClick={() => {
-                          setSelectedImage(null);
-                          setResult(null);
-                        }}
+                        onClick={clearDiagnosis}
                         className="absolute top-4 right-4 bg-red-500 text-white size-12 rounded-full text-2xl hover:bg-red-600"
                       >
                         ✕
@@ -320,11 +358,7 @@ export default function DashboardPage() {
                       </ul>
                     </div>
                     <button
-                      onClick={() => {
-                        setSelectedImage(null);
-                        setImageFile(null);
-                        setResult(null);
-                      }}
+                      onClick={clearDiagnosis}
                       className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-4 rounded-2xl text-xl font-bold hover:bg-[#7cb342] transition-colors"
                     >
                       Intentar con otra foto
@@ -514,14 +548,10 @@ export default function DashboardPage() {
                   </div>
 
                   <button
-                    onClick={() => {
-                      setSelectedImage(null);
-                      setImageFile(null);
-                      setResult(null);
-                    }}
+                    onClick={clearDiagnosis}
                     className="w-full bg-[#0d1b0d] dark:bg-gray-700 text-white py-4 rounded-2xl text-xl font-bold hover:bg-[#1a2e1a] dark:hover:bg-gray-600 transition-colors"
                   >
-                    Analizar Otra Foto
+                    Cerrar diagnóstico
                   </button>
                 </div>
 

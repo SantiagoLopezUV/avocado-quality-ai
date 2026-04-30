@@ -73,7 +73,8 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("avocado_user");
-    localStorage.removeItem("avocado_token"); // ← limpiar token al salir
+    localStorage.removeItem("avocado_token");
+    sessionStorage.removeItem("avocado_active_diagnosis"); // HU-F08: limpiar diagnóstico al cerrar sesión
   };
 
   const updateUserData = (newData) => {
