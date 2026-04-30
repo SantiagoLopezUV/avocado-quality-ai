@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useAuth } from "../contexts/AuthContext";
 import { 
   HelpCircle, 
   Phone, 
@@ -22,6 +23,8 @@ import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 
 export default function HelpPage() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const handleLogout = () => { logout(); navigate("/"); };
   const [openFaq, setOpenFaq] = useState(null);
 
   const toggleFaq = (index) => {
@@ -114,26 +117,37 @@ export default function HelpPage() {
           <Logo size="lg" showText={true} />
           <div className="flex items-center gap-6">
             <nav className="hidden md:flex gap-8">
-              <button 
-                onClick={() => navigate("/dashboard")} 
-                className="text-lg text-gray-900 dark:text-gray-100 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors"
-              >
+              <button onClick={() => navigate("/dashboard")} className="text-lg text-gray-900 dark:text-gray-100 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
                 Diagnóstico
               </button>
-              <button 
-                onClick={() => navigate("/marketplace")} 
-                className="text-lg text-gray-900 dark:text-gray-100 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors"
-              >
+              <button onClick={() => navigate("/marketplace")} className="text-lg text-gray-900 dark:text-gray-100 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
                 Mi Plaza
               </button>
-              <button 
-                onClick={() => navigate("/profile")} 
-                className="text-lg text-gray-900 dark:text-gray-100 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors"
-              >
-                Perfil
+              <button onClick={() => navigate("/help")} className="text-lg text-[#8bc34a] dark:text-[#9ccc65] font-bold border-b-4 border-[#8bc34a] dark:border-[#9ccc65] pb-1 transition-colors">
+                Ayuda
               </button>
+              {user && (
+                <button onClick={() => navigate("/history")} className="text-lg text-gray-900 dark:text-gray-100 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
+                  Mi Historial
+                </button>
+              )}
+              {user ? (
+                <button onClick={() => navigate("/profile")} className="text-lg text-gray-900 dark:text-gray-100 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
+                  Mi Perfil
+                </button>
+              ) : (
+                <button onClick={() => navigate("/")} className="text-lg text-[#8bc34a] dark:text-[#9ccc65] font-semibold hover:underline transition-colors">
+                  Ingresar
+                </button>
+              )}
             </nav>
             <ThemeToggle />
+            {user && (
+              <button onClick={handleLogout} className="flex items-center gap-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
+                <span>🚪</span>
+                Salir
+              </button>
+            )}
           </div>
         </div>
       </header>
