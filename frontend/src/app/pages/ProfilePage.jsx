@@ -71,7 +71,7 @@ export default function ProfilePage() {
                 Ayuda
               </button>
               <button onClick={() => navigate("/history")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
-                Mi Historial
+                Mis Lotes
               </button>
               <button onClick={() => navigate("/profile")} className="text-lg text-[#8bc34a] dark:text-[#9ccc65] font-bold border-b-4 border-[#8bc34a] dark:border-[#9ccc65] pb-1 transition-colors">
                 Mi Perfil

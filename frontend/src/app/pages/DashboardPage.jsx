@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [imageFile, setImageFile] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   // HU-F08: restaurar diagnóstico activo desde sessionStorage al montar
   useEffect(() => {
@@ -146,6 +147,9 @@ export default function DashboardPage() {
 
         // HU-I03
         confidenceSummary: confidenceSummary,
+
+        // Indica si el lote quedó guardado en BD
+        savedToHistory: data.saved_to_history || false,
       };
 
       // HU-F08: imagen anotada con bounding boxes o la original subida
@@ -187,6 +191,42 @@ export default function DashboardPage() {
     }
   };
 
+  // HU-F09: compartir resultado por WhatsApp
+  const handleShare = () => {
+    if (!result) return;
+    const mensaje =
+      `🥑 *Resultado del Diagnóstico - Avocado Quality AI*\n\n` +
+      `📊 *Madurez:* ${result.ripeness}\n` +
+      `❤️ *Estado de salud:* ${result.health} (${result.healthPercent}%)\n` +
+      `🦠 *Enfermedades:* ${result.disease}\n` +
+      `💰 *Precio sugerido:* $${result.suggestedPrice?.toLocaleString("es-CO")} COP/kg\n` +
+      `📍 *Destino de mercado:* ${result.destination}\n\n` +
+      `_Analizado con Avocado Quality AI_ 🤖`;
+
+    const phone = user?.phone?.replace(/\D/g, "");
+    const url = phone
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(mensaje)}`
+      : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+
+    window.open(url, "_blank");
+  };
+
+  const handleCopyResult = () => {
+    if (!result) return;
+    const texto =
+      `Resultado del Diagnóstico - Avocado Quality AI\n\n` +
+      `Madurez: ${result.ripeness}\n` +
+      `Estado de salud: ${result.health} (${result.healthPercent}%)\n` +
+      `Enfermedades: ${result.disease}\n` +
+      `Precio sugerido: $${result.suggestedPrice?.toLocaleString("es-CO")} COP/kg\n` +
+      `Destino de mercado: ${result.destination}`;
+
+    navigator.clipboard?.writeText(texto).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    });
+  };
+
  return (
     <div className="bg-[#f6f8f6] dark:bg-gray-900 min-h-screen flex flex-col transition-colors">
       {/* Header */}
@@ -208,7 +248,7 @@ export default function DashboardPage() {
               </button>
               {user && (
                 <button onClick={() => navigate("/history")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
-                  Mi Historial
+                  Mis Lotes
                 </button>
               )}
               {user ? (
@@ -555,6 +595,62 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* HU-F09: Compartir resultado */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleShare}
+                      className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-4 rounded-2xl text-lg font-bold hover:bg-[#1ebe5d] transition-colors shadow"
+                    >
+                      <span className="text-2xl">💬</span>
+                      Compartir por WhatsApp
+                    </button>
+                    <button
+                      onClick={handleCopyResult}
+                      className="flex items-center justify-center gap-2 bg-[#f3f7f3] dark:bg-gray-700 text-[#0d1b0d] dark:text-gray-100 px-5 py-4 rounded-2xl text-lg font-bold hover:bg-[#e8f5e9] dark:hover:bg-gray-600 transition-colors border-2 border-[#c5e1a5] dark:border-gray-600"
+                      title="Copiar al portapapeles"
+                    >
+                      {copied ? "✅" : "📋"}
+                    </button>
+                  </div>
+                  {copied && (
+                    <p className="text-center text-sm text-[#689f38] dark:text-[#9ccc65] font-semibold -mt-2">
+                      ¡Resultado copiado al portapapeles!
+                    </p>
+                  )}
+
+                  {/* Banner: lote guardado / invitar a iniciar sesión */}
+                  {result.savedToHistory ? (
+                    <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-2xl p-4 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">✅</span>
+                        <p className="text-base font-semibold text-green-700 dark:text-green-400">
+                          ¡Lote guardado en Mis Lotes!
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate("/history")}
+                        className="flex-shrink-0 bg-[#8bc34a] dark:bg-[#7cb342] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#7cb342] transition-colors"
+                      >
+                        Ver Mis Lotes →
+                      </button>
+                    </div>
+                  ) : !user ? (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-4 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">💾</span>
+                        <p className="text-base font-semibold text-blue-700 dark:text-blue-400">
+                          Inicia sesión para guardar este lote
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate("/")}
+                        className="flex-shrink-0 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors"
+                      >
+                        Iniciar sesión
+                      </button>
+                    </div>
+                  ) : null}
 
                   <button
                     onClick={clearDiagnosis}
