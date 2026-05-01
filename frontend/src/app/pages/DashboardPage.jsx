@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [loteSaved, setLoteSaved] = useState(false);
 
   // HU-F08: restaurar diagnóstico activo desde sessionStorage al montar
   useEffect(() => {
@@ -45,6 +46,7 @@ export default function DashboardPage() {
     setSelectedImage(null);
     setImageFile(null);
     setResult(null);
+    setLoteSaved(false);
     sessionStorage.removeItem(DIAGNOSIS_KEY);
   };
 
@@ -619,23 +621,33 @@ export default function DashboardPage() {
                     </p>
                   )}
 
-                  {/* Banner: lote guardado / invitar a iniciar sesión */}
-                  {result.savedToHistory ? (
-                    <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-2xl p-4 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">✅</span>
-                        <p className="text-base font-semibold text-green-700 dark:text-green-400">
-                          ¡Lote guardado en Mis Lotes!
-                        </p>
+                  {/* Guardar lote en Mis Lotes */}
+                  {user ? (
+                    loteSaved ? (
+                      <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-2xl p-4 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">✅</span>
+                          <p className="text-base font-semibold text-green-700 dark:text-green-400">
+                            ¡Lote guardado en Mis Lotes!
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => navigate("/history")}
+                          className="flex-shrink-0 bg-[#8bc34a] dark:bg-[#7cb342] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#7cb342] transition-colors"
+                        >
+                          Ver Mis Lotes →
+                        </button>
                       </div>
+                    ) : (
                       <button
-                        onClick={() => navigate("/history")}
-                        className="flex-shrink-0 bg-[#8bc34a] dark:bg-[#7cb342] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#7cb342] transition-colors"
+                        onClick={() => setLoteSaved(true)}
+                        className="w-full flex items-center justify-center gap-2 bg-[#11d411] text-[#0d1b0d] py-4 rounded-2xl text-xl font-bold hover:bg-[#0fd40f] transition-colors shadow"
                       >
-                        Ver Mis Lotes →
+                        <span>💾</span>
+                        Guardar Lote en Mis Lotes
                       </button>
-                    </div>
-                  ) : !user ? (
+                    )
+                  ) : (
                     <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-4 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <span className="text-2xl">💾</span>
@@ -650,7 +662,7 @@ export default function DashboardPage() {
                         Iniciar sesión
                       </button>
                     </div>
-                  ) : null}
+                  )}
 
                   <button
                     onClick={clearDiagnosis}

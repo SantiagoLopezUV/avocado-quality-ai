@@ -180,8 +180,8 @@ export default function HistoryPage() {
             )}
           </div>
 
-          {/* ── Barra de búsqueda + filtros (HU-B13) ──────────────────────── */}
-          {!loading && !error && lotes.length > 0 && (
+          {/* ── Barra de búsqueda + filtros — siempre visible (HU-B13) ───── */}
+          {!loading && !error && (
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-4 mb-6 transition-colors">
               <div className="flex gap-3">
                 <input
@@ -263,7 +263,7 @@ export default function HistoryPage() {
             </div>
           )}
 
-          {/* ── Estados de carga / error ────────────────────────────────────── */}
+          {/* ── Estado de carga ─────────────────────────────────────────────── */}
           {loading && (
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-12 text-center transition-colors">
               <span className="text-6xl animate-spin inline-block">⏳</span>
@@ -273,6 +273,7 @@ export default function HistoryPage() {
             </div>
           )}
 
+          {/* ── Error de carga ──────────────────────────────────────────────── */}
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 rounded-3xl p-8 border-2 border-red-200 dark:border-red-800 text-center transition-colors">
               <span className="text-5xl">⚠️</span>
@@ -280,7 +281,7 @@ export default function HistoryPage() {
             </div>
           )}
 
-          {/* ── Estado vacío: sin diagnósticos (HU-B12) ────────────────────── */}
+          {/* ── Sin lotes aún ──────────────────────────────────────────────── */}
           {!loading && !error && lotes.length === 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-12 text-center transition-colors">
               <span className="text-8xl">📦</span>
@@ -288,7 +289,7 @@ export default function HistoryPage() {
                 Aún no tiene lotes guardados
               </h3>
               <p className="text-xl text-[#475569] dark:text-gray-400 mb-6 transition-colors">
-                Cuando analice sus aguacates con sesión iniciada, el diagnóstico se guardará aquí como un lote.
+                Haga un diagnóstico y guarde el resultado para verlo aquí.
               </p>
               <button
                 onClick={() => navigate("/dashboard")}
