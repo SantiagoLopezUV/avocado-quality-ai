@@ -4,10 +4,60 @@ import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
 import { useAuth } from "../contexts/AuthContext";
 
+const API_BASE = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8001"}/api/v1`;
+
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, getToken } = useAuth();
   const [editMode, setEditMode] = useState(false);
+
+  // Estado para cambio de contraseña (HU-F11)
+  const [showPwdForm, setShowPwdForm] = useState(false);
+  const [pwdForm, setPwdForm] = useState({ current_password: "", new_password: "", confirm_password: "" });
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdError, setPwdError] = useState("");
+  const [pwdSuccess, setPwdSuccess] = useState(false);
+
+  const handlePwdChange = async () => {
+    setPwdError("");
+    setPwdSuccess(false);
+
+    if (!pwdForm.current_password || !pwdForm.new_password || !pwdForm.confirm_password) {
+      setPwdError("Complete todos los campos.");
+      return;
+    }
+    if (pwdForm.new_password.length < 8) {
+      setPwdError("La nueva contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
+    if (pwdForm.new_password !== pwdForm.confirm_password) {
+      setPwdError("La nueva contraseña y su confirmación no coinciden.");
+      return;
+    }
+
+    setPwdLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/users/change-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify(pwdForm),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPwdError(data.detail || "Error al cambiar la contraseña.");
+      } else {
+        setPwdSuccess(true);
+        setPwdForm({ current_password: "", new_password: "", confirm_password: "" });
+      }
+    } catch {
+      setPwdError("No se pudo conectar con el servidor.");
+    } finally {
+      setPwdLoading(false);
+    }
+  };
   const [profile, setProfile] = useState({
     name: user?.name || "Usuario",
     farm: "Finca La Esperanza",
@@ -196,6 +246,75 @@ export default function ProfilePage() {
                   <span className="text-2xl">🚪</span>
                   Cerrar Sesión
                 </button>
+              </div>
+
+              {/* Cambiar contraseña (HU-F11) */}
+              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 transition-colors">
+                <button
+                  onClick={() => { setShowPwdForm(v => !v); setPwdError(""); setPwdSuccess(false); }}
+                  className="w-full flex items-center justify-between text-xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-2xl">🔒</span>
+                    Cambiar contraseña
+                  </span>
+                  <span className={`text-[#8bc34a] transition-transform duration-200 ${showPwdForm ? "rotate-180" : ""}`}>▼</span>
+                </button>
+
+                {showPwdForm && (
+                  <div className="mt-5 space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-[#475569] dark:text-gray-400 mb-1">Contraseña actual</label>
+                      <input
+                        type="password"
+                        value={pwdForm.current_password}
+                        onChange={e => setPwdForm(f => ({ ...f, current_password: e.target.value }))}
+                        placeholder="••••••••"
+                        className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base focus:border-[#8bc34a] focus:outline-none dark:bg-gray-700 dark:text-gray-100 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[#475569] dark:text-gray-400 mb-1">Nueva contraseña</label>
+                      <input
+                        type="password"
+                        value={pwdForm.new_password}
+                        onChange={e => setPwdForm(f => ({ ...f, new_password: e.target.value }))}
+                        placeholder="Mínimo 8 caracteres"
+                        className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base focus:border-[#8bc34a] focus:outline-none dark:bg-gray-700 dark:text-gray-100 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[#475569] dark:text-gray-400 mb-1">Confirmar nueva contraseña</label>
+                      <input
+                        type="password"
+                        value={pwdForm.confirm_password}
+                        onChange={e => setPwdForm(f => ({ ...f, confirm_password: e.target.value }))}
+                        placeholder="Repita la nueva contraseña"
+                        className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base focus:border-[#8bc34a] focus:outline-none dark:bg-gray-700 dark:text-gray-100 transition-colors"
+                      />
+                    </div>
+
+                    {pwdError && (
+                      <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+                        <p className="text-sm font-semibold text-red-600 dark:text-red-400">⚠️ {pwdError}</p>
+                      </div>
+                    )}
+
+                    {pwdSuccess && (
+                      <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-xl px-4 py-3">
+                        <p className="text-sm font-semibold text-green-700 dark:text-green-400">✅ ¡Contraseña actualizada correctamente! Puede seguir navegando.</p>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handlePwdChange}
+                      disabled={pwdLoading}
+                      className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-3 rounded-xl text-lg font-bold hover:bg-[#7cb342] dark:hover:bg-[#689f38] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {pwdLoading ? "Actualizando..." : "Actualizar contraseña"}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

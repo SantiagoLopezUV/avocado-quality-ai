@@ -20,6 +20,12 @@ class UserLogin(BaseModel):
     password: str
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+    confirm_password: str
+
+
 class UserResponse(BaseModel):
     id: UUID
     document_number: Optional[str]

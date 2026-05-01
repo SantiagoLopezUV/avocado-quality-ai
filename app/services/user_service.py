@@ -51,3 +51,13 @@ class UserService:
 
     def get_user_by_id(self, user_id: uuid.UUID) -> Optional[User]:
         return self.user_repository.get_user_by_id(user_id)
+
+    def change_password(self, user_id: uuid.UUID, current_password: str, new_password: str) -> None:
+        user = self.user_repository.get_user_by_id(user_id)
+        if not user:
+            raise ValueError("Usuario no encontrado")
+        if not self.verify_password(current_password, user.password_hash):
+            raise ValueError("La contraseña actual es incorrecta")
+        if len(new_password) < 8:
+            raise ValueError("La nueva contraseña debe tener al menos 8 caracteres")
+        self.user_repository.update_password(user_id, self.hash_password(new_password))

@@ -1,13 +1,28 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
-from jose import jwt
-from app.schemas.user import UserCreate, UserLogin, UserResponse
+from jose import jwt, JWTError
+from app.schemas.user import UserCreate, UserLogin, UserResponse, ChangePasswordRequest
 from app.services.user_service import UserService
 from app.core.database import get_db
 from app.core.config import settings
+from typing import Optional
+import uuid
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+def get_current_user_id(authorization: Optional[str] = Header(default=None)) -> uuid.UUID:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token requerido")
+    token = authorization.split(" ", 1)[1]
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+        return uuid.UUID(user_id)
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido o expirado")
 
 def create_access_token(user_id: str, name: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(hours=24)
@@ -50,6 +65,24 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
         "message": "Login Exitoso",
         "user_id": str(authenticated_user.id),
         "name": authenticated_user.name,
-        "access_token": token,       # ← nuevo
-        "token_type": "bearer",      # ← nuevo
+        "access_token": token,
+        "token_type": "bearer",
     }
+
+@router.post("/change-password")
+def change_password(
+    data: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    if data.new_password != data.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La nueva contraseña y su confirmación no coinciden",
+        )
+    service = UserService(db)
+    try:
+        service.change_password(user_id, data.current_password, data.new_password)
+        return {"message": "Contraseña actualizada correctamente"}
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
