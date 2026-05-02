@@ -39,6 +39,7 @@ export function AuthProvider({ children }) {
         phone: newUser.phone,
         location: newUser.location,
         document_number: newUser.document_number,
+        profile_picture: newUser.profile_picture || null,
       };
       setUser(userToStore);
       localStorage.setItem("avocado_user", JSON.stringify(userToStore));
@@ -60,7 +61,11 @@ export function AuthProvider({ children }) {
       const userToStore = {
         id: response.user_id,
         name: response.name,
-        email: email,
+        email: response.email || email,
+        phone: response.phone || null,
+        location: response.location || null,
+        document_number: response.document_number || null,
+        profile_picture: response.profile_picture || null,
       };
       setUser(userToStore);
       localStorage.setItem("avocado_user", JSON.stringify(userToStore));

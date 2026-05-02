@@ -1,14 +1,71 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
 import { useAuth } from "../contexts/AuthContext";
 
 const API_BASE = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8001"}/api/v1`;
+const STATIC_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8001";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, logout, getToken, updateUserData } = useAuth();
+  const photoInputRef = useRef(null);
+
+  // ── Foto de perfil ────────────────────────────────────────────────────────
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError]   = useState("");
+  const [photoSuccess, setPhotoSuccess] = useState(false);
+
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPhotoError("");
+    setPhotoSuccess(false);
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setPhotoError("Solo se permiten imágenes JPEG, PNG o WEBP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError("La imagen supera los 5 MB. Usa una imagen más pequeña.");
+      return;
+    }
+
+    // Mostrar preview inmediato
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhotoPreview(ev.target.result);
+    reader.readAsDataURL(file);
+
+    // Subir al servidor
+    setPhotoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${API_BASE}/users/me/photo`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPhotoError(data.detail || "Error al subir la foto.");
+        setPhotoPreview(null);
+      } else {
+        updateUserData({ profile_picture: data.profile_picture });
+        setPhotoSuccess(true);
+      }
+    } catch {
+      setPhotoError("No se pudo conectar con el servidor.");
+      setPhotoPreview(null);
+    } finally {
+      setPhotoUploading(false);
+      // Reset input para poder subir la misma imagen otra vez
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  };
 
   // ── Edición de perfil (HU-F10) ────────────────────────────────────────────
   const [editMode, setEditMode] = useState(false);
@@ -214,9 +271,43 @@ export default function ProfilePage() {
 
             {/* Avatar + nombre */}
             <div className="flex items-center gap-5 mb-8">
-              <div className="size-24 bg-gradient-to-br from-[#8bc34a] to-[#7cb342] rounded-full flex items-center justify-center text-5xl flex-shrink-0">
-                👨‍🌾
+              {/* Avatar clickable */}
+              <div className="relative flex-shrink-0">
+                <button
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={photoUploading}
+                  className="group relative size-24 rounded-full overflow-hidden focus:outline-none focus:ring-4 focus:ring-[#8bc34a] focus:ring-offset-2 disabled:opacity-60"
+                  title="Cambiar foto de perfil"
+                >
+                  {photoPreview || user.profile_picture ? (
+                    <img
+                      src={photoPreview || `${STATIC_BASE}/uploads/${user.profile_picture}`}
+                      alt="Foto de perfil"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-[#8bc34a] to-[#7cb342] flex items-center justify-center text-5xl">
+                      👨‍🌾
+                    </div>
+                  )}
+                  {/* Overlay cámara */}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    {photoUploading
+                      ? <span className="text-white text-2xl animate-spin">⏳</span>
+                      : <span className="text-white text-2xl">📷</span>
+                    }
+                  </div>
+                </button>
+                {/* Input oculto */}
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
               </div>
+
               <div>
                 <h3 className="text-2xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors">
                   {user.name}
@@ -226,8 +317,23 @@ export default function ProfilePage() {
                     C.C. {user.document_number}
                   </p>
                 )}
+                <p className="text-sm text-[#8bc34a] dark:text-[#9ccc65] mt-1 font-medium">
+                  Toca la foto para cambiarla
+                </p>
               </div>
             </div>
+
+            {/* Mensajes de foto */}
+            {photoError && (
+              <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl px-4 py-3 mb-4">
+                <p className="text-sm font-semibold text-red-600 dark:text-red-400">⚠️ {photoError}</p>
+              </div>
+            )}
+            {photoSuccess && (
+              <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-xl px-4 py-3 mb-4">
+                <p className="text-sm font-semibold text-green-700 dark:text-green-400">✅ ¡Foto de perfil actualizada!</p>
+              </div>
+            )}
 
             {/* Mensaje de éxito tras guardar */}
             {editSuccess && !editMode && (

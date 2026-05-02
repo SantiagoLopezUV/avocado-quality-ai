@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+from fastapi import APIRouter, Depends, HTTPException, status, Header, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 from app.schemas.user import UserCreate, UserLogin, UserResponse, ChangePasswordRequest, UserUpdate
 from app.services.user_service import UserService
+from app.repositories.user_repository import UserRepository
 from app.core.database import get_db
 from app.core.config import settings
+from pathlib import Path
 from typing import Optional
 import uuid
 
@@ -65,6 +67,11 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
         "message": "Login Exitoso",
         "user_id": str(authenticated_user.id),
         "name": authenticated_user.name,
+        "email": authenticated_user.email,
+        "phone": authenticated_user.phone,
+        "location": authenticated_user.location,
+        "document_number": authenticated_user.document_number,
+        "profile_picture": authenticated_user.profile_picture,
         "access_token": token,
         "token_type": "bearer",
     }
@@ -81,6 +88,41 @@ def update_profile(
         return updated
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+@router.post("/me/photo")
+async def upload_profile_photo(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
+    MAX_BYTES = 5 * 1024 * 1024  # 5 MB
+
+    if file.content_type not in ALLOWED_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tipo de archivo no permitido. Usa JPEG, PNG o WEBP.",
+        )
+
+    content = await file.read()
+    if len(content) > MAX_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La imagen supera el límite de 5 MB. Usa una imagen más pequeña.",
+        )
+
+    ext = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}[file.content_type]
+    filename = f"{uuid.uuid4().hex}{ext}"
+
+    profile_dir = Path(settings.UPLOAD_DIR) / "profiles"
+    profile_dir.mkdir(parents=True, exist_ok=True)
+    (profile_dir / filename).write_bytes(content)
+
+    relative_path = f"profiles/{filename}"
+    UserRepository(db).update_user(user_id, {"profile_picture": relative_path})
+
+    return {"profile_picture": relative_path, "message": "Foto de perfil actualizada correctamente."}
+
 
 @router.post("/change-password")
 def change_password(

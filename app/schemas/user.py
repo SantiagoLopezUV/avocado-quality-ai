@@ -40,7 +40,8 @@ class UserResponse(BaseModel):
     email: str
     phone: Optional[str]
     location: Optional[str]
+    profile_picture: Optional[str] = None
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
