@@ -23,7 +23,6 @@ export default function DashboardPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [loteSaved, setLoteSaved] = useState(false);
 
   // HU-F08: restaurar diagnóstico activo desde sessionStorage al montar
   useEffect(() => {
@@ -46,7 +45,6 @@ export default function DashboardPage() {
     setSelectedImage(null);
     setImageFile(null);
     setResult(null);
-    setLoteSaved(false);
     sessionStorage.removeItem(DIAGNOSIS_KEY);
   };
 
@@ -621,33 +619,33 @@ export default function DashboardPage() {
                     </p>
                   )}
 
-                  {/* Guardar lote en Mis Lotes */}
-                  {user ? (
-                    loteSaved ? (
-                      <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-2xl p-4 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">✅</span>
-                          <p className="text-base font-semibold text-green-700 dark:text-green-400">
-                            ¡Lote guardado en Mis Lotes!
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => navigate("/history")}
-                          className="flex-shrink-0 bg-[#8bc34a] dark:bg-[#7cb342] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#7cb342] transition-colors"
-                        >
-                          Ver Mis Lotes →
-                        </button>
+                  {/* Estado de guardado en Mis Lotes */}
+                  {result.savedToHistory ? (
+                    // ✅ Guardado exitoso — botón directo a Mis Lotes
+                    <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-2xl p-4 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">✅</span>
+                        <p className="text-base font-semibold text-green-700 dark:text-green-400">
+                          ¡Lote guardado en Mis Lotes!
+                        </p>
                       </div>
-                    ) : (
                       <button
-                        onClick={() => setLoteSaved(true)}
-                        className="w-full flex items-center justify-center gap-2 bg-[#11d411] text-[#0d1b0d] py-4 rounded-2xl text-xl font-bold hover:bg-[#0fd40f] transition-colors shadow"
+                        onClick={() => navigate("/history")}
+                        className="flex-shrink-0 bg-[#8bc34a] dark:bg-[#7cb342] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#7cb342] transition-colors"
                       >
-                        <span>💾</span>
-                        Guardar Lote en Mis Lotes
+                        Ver Mis Lotes →
                       </button>
-                    )
+                    </div>
+                  ) : user ? (
+                    // ⚠️ Logueado pero el guardado falló en el servidor
+                    <div className="bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 rounded-2xl p-4 flex items-center gap-3">
+                      <span className="text-2xl">⚠️</span>
+                      <p className="text-sm font-semibold text-orange-700 dark:text-orange-400">
+                        No se pudo guardar el lote en este momento. El análisis sí fue procesado.
+                      </p>
+                    </div>
                   ) : (
+                    // 🔒 No logueado — invitar a iniciar sesión
                     <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-4 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <span className="text-2xl">💾</span>

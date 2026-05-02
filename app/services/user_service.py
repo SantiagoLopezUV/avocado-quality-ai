@@ -2,7 +2,7 @@
 import bcrypt
 from sqlalchemy.orm import Session
 from app.models.user import User
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserUpdate
 from app.repositories.user_repository import UserRepository
 from typing import Optional
 import uuid
@@ -51,6 +51,18 @@ class UserService:
 
     def get_user_by_id(self, user_id: uuid.UUID) -> Optional[User]:
         return self.user_repository.get_user_by_id(user_id)
+
+    def update_user(self, user_id: uuid.UUID, update_data: UserUpdate) -> User:
+        # Verificar unicidad del correo si se está cambiando
+        if update_data.email:
+            existing = self.user_repository.get_user_by_email(update_data.email)
+            if existing and str(existing.id) != str(user_id):
+                raise ValueError("Este correo ya está registrado por otro usuario")
+        data = {k: v for k, v in update_data.model_dump().items() if v is not None}
+        user = self.user_repository.update_user(user_id, data)
+        if not user:
+            raise ValueError("Usuario no encontrado")
+        return user
 
     def change_password(self, user_id: uuid.UUID, current_password: str, new_password: str) -> None:
         user = self.user_repository.get_user_by_id(user_id)

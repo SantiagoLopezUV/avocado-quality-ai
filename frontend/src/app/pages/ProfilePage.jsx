@@ -8,16 +8,111 @@ const API_BASE = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8001"}/api
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, logout, getToken } = useAuth();
-  const [editMode, setEditMode] = useState(false);
+  const { user, logout, getToken, updateUserData } = useAuth();
 
-  // Estado para cambio de contraseña (HU-F11)
+  // ── Edición de perfil (HU-F10) ────────────────────────────────────────────
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError]   = useState("");
+  const [editSuccess, setEditSuccess] = useState(false);
+
+  // ── Cambio de contraseña (HU-F11) ─────────────────────────────────────────
   const [showPwdForm, setShowPwdForm] = useState(false);
-  const [pwdForm, setPwdForm] = useState({ current_password: "", new_password: "", confirm_password: "" });
+  const [pwdForm, setPwdForm] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
   const [pwdLoading, setPwdLoading] = useState(false);
-  const [pwdError, setPwdError] = useState("");
+  const [pwdError,   setPwdError]   = useState("");
   const [pwdSuccess, setPwdSuccess] = useState(false);
 
+  // Redirigir si no está logueado
+  useEffect(() => {
+    if (!user) navigate("/");
+  }, [user, navigate]);
+
+  if (!user) return null;
+
+  const handleLogout = () => { logout(); navigate("/"); };
+
+  // ── Abrir modo edición ─────────────────────────────────────────────────────
+  const openEdit = () => {
+    setEditForm({
+      name:     user.name     || "",
+      email:    user.email    || "",
+      phone:    user.phone    || "",
+      location: user.location || "",
+    });
+    setEditError("");
+    setEditSuccess(false);
+    setEditMode(true);
+  };
+
+  // ── Validar y guardar perfil ───────────────────────────────────────────────
+  const handleSaveProfile = async () => {
+    setEditError("");
+    setEditSuccess(false);
+
+    // Validaciones client-side
+    if (!editForm.name.trim()) {
+      setEditError("El nombre no puede estar vacío.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (editForm.email && !emailRegex.test(editForm.email)) {
+      setEditError("El correo no tiene un formato válido.");
+      return;
+    }
+    const phoneRegex = /^[0-9+\-\s()]*$/;
+    if (editForm.phone && !phoneRegex.test(editForm.phone)) {
+      setEditError("El teléfono solo puede contener números, +, - y espacios.");
+      return;
+    }
+
+    setEditLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/users/me`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({
+          name:     editForm.name     || undefined,
+          email:    editForm.email    || undefined,
+          phone:    editForm.phone    || undefined,
+          location: editForm.location || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setEditError(data.detail || "Error al guardar los cambios.");
+      } else {
+        // Actualizar contexto y localStorage inmediatamente
+        updateUserData({
+          name:     data.name,
+          email:    data.email,
+          phone:    data.phone,
+          location: data.location,
+        });
+        setEditSuccess(true);
+        setEditMode(false);
+      }
+    } catch {
+      setEditError("No se pudo conectar con el servidor.");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // ── Cambio de contraseña ───────────────────────────────────────────────────
   const handlePwdChange = async () => {
     setPwdError("");
     setPwdSuccess(false);
@@ -58,51 +153,14 @@ export default function ProfilePage() {
       setPwdLoading(false);
     }
   };
-  const [profile, setProfile] = useState({
-    name: user?.name || "Usuario",
-    farm: "Finca La Esperanza",
-    location: user?.location || "Valle del Cauca",
-    phone: user?.phone || "No registrado",
-    email: user?.email || "No registrado",
-    document_number: user?.document_number || "No registrado",
-    experience: "25 años cultivando aguacate",
-    area: "15 hectáreas",
-    certification: "Certificado ICA",
-  });
 
-  // Si no hay usuario logueado, redirigir al login
-  useEffect(() => {
-    if (!user) {
-      navigate("/");
-    }
-  }, [user, navigate]);
-
-  // Si no hay usuario, mostrar null mientras redirige
-  if (!user) {
-    return null;
-  }
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
-
-  const stats = {
-    totalSales: 45,
-    activeListings: 3,
-    rating: 4.8,
-    totalRevenue: "$125,450,000",
-  };
-
-  const recentActivity = [
-    { id: 1, action: "Vendió lote Hass Premium", date: "Hace 2 días", amount: "$2,250,000" },
-    { id: 2, action: "Publicó nuevo lote", date: "Hace 5 días", amount: "-" },
-    { id: 3, action: "Recibió calificación 5⭐", date: "Hace 1 semana", amount: "-" },
-    { id: 4, action: "Vendió lote Exportación", date: "Hace 2 semanas", amount: "$5,200,000" },
-  ];
+  // ── Helpers de estilo ──────────────────────────────────────────────────────
+  const inputCls = "w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base focus:border-[#8bc34a] focus:outline-none dark:bg-gray-700 dark:text-gray-100 transition-colors";
+  const labelCls = "block text-sm font-semibold text-[#475569] dark:text-gray-400 mb-1";
 
   return (
     <div className="bg-[#f6f8f6] dark:bg-gray-900 min-h-screen flex flex-col transition-colors">
+
       {/* Header */}
       <header className="bg-[#e8f5e9] dark:bg-gray-800 border-b-2 border-[#c5e1a5] dark:border-gray-700 px-6 py-6 sticky top-0 z-50 transition-colors">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -132,343 +190,223 @@ export default function ProfilePage() {
               onClick={handleLogout}
               className="flex items-center gap-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
             >
-              <span>🚪</span>
-              Salir
+              <span>🚪</span>Salir
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="flex-1 px-6 py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Page Header */}
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-4xl">👨‍🌾</span>
+        <div className="max-w-3xl mx-auto space-y-6">
+
+          {/* Título */}
+          <div className="flex items-center gap-3">
+            <span className="text-4xl">👨‍🌾</span>
+            <div>
               <h2 className="text-4xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors">Mi Perfil</h2>
+              <p className="text-lg text-[#475569] dark:text-gray-400 transition-colors">Vea y edite su información personal</p>
             </div>
-            <p className="text-xl text-[#475569] dark:text-gray-400 leading-relaxed transition-colors">
-              Aquí puede ver y editar su información, revisar sus ventas y manejar su cuenta.
-            </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Left Column - Profile Card */}
-            <div className="lg:col-span-1 space-y-6">
-              {/* Profile Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors">
-                <div className="text-center mb-6">
-                  <div className="size-32 bg-gradient-to-br from-[#8bc34a] to-[#7cb342] rounded-full mx-auto mb-4 flex items-center justify-center text-7xl">
-                    👨‍🌾
-                  </div>
-                  <h3 className="text-2xl font-bold text-[#0d1b0d] dark:text-gray-100 mb-2 transition-colors">{profile.name}</h3>
-                  <p className="text-lg text-[#475569] dark:text-gray-400 transition-colors">{profile.farm}</p>
-                  <div className="flex items-center justify-center gap-2 mt-3">
-                    <span className="text-3xl">⭐</span>
-                    <span className="text-2xl font-bold text-[#8bc34a] dark:text-[#9ccc65] transition-colors">{stats.rating}</span>
-                    <span className="text-lg text-[#475569] dark:text-gray-400 transition-colors">(45 ventas)</span>
-                  </div>
-                </div>
+          {/* Tarjeta principal del perfil */}
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors">
 
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">📍</span>
-                    <div>
-                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">Ubicación</p>
-                      <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 transition-colors">{profile.location}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">📞</span>
-                    <div>
-                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">Teléfono</p>
-                      <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 transition-colors">{profile.phone}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">✉️</span>
-                    <div>
-                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">Correo</p>
-                      <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 break-all transition-colors">{profile.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">🌳</span>
-                    <div>
-                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">Experiencia</p>
-                      <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 transition-colors">{profile.experience}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">📐</span>
-                    <div>
-                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">Área cultivada</p>
-                      <p className="text-lg font-semibold text-[#0d1b0d] dark:text-gray-200 transition-colors">{profile.area}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">✅</span>
-                    <div>
-                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">Certificación</p>
-                      <p className="text-lg font-semibold text-[#8bc34a] dark:text-[#9ccc65] transition-colors">{profile.certification}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setEditMode(!editMode)}
-                  className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-4 rounded-2xl text-xl font-bold hover:bg-[#7cb342] dark:hover:bg-[#689f38] transition-colors mt-6"
-                >
-                  {editMode ? "Guardar Cambios" : "Editar Perfil"}
-                </button>
+            {/* Avatar + nombre */}
+            <div className="flex items-center gap-5 mb-8">
+              <div className="size-24 bg-gradient-to-br from-[#8bc34a] to-[#7cb342] rounded-full flex items-center justify-center text-5xl flex-shrink-0">
+                👨‍🌾
               </div>
-
-              {/* Quick Actions */}
-              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 space-y-3 transition-colors">
-                <h3 className="text-xl font-bold text-[#0d1b0d] dark:text-gray-100 mb-4 transition-colors">Acciones Rápidas</h3>
-                <button className="w-full bg-[#f3f7f3] dark:bg-gray-700 hover:bg-[#e4ede4] dark:hover:bg-gray-600 text-[#0d1b0d] dark:text-gray-200 py-3 rounded-xl text-lg font-semibold transition-colors flex items-center justify-center gap-2">
-                  <span className="text-2xl">📤</span>
-                  Publicar Lote Nuevo
-                </button>
-                <button className="w-full bg-[#f3f7f3] dark:bg-gray-700 hover:bg-[#e4ede4] dark:hover:bg-gray-600 text-[#0d1b0d] dark:text-gray-200 py-3 rounded-xl text-lg font-semibold transition-colors flex items-center justify-center gap-2">
-                  <span className="text-2xl">💬</span>
-                  Mis Mensajes
-                </button>
-                <button className="w-full bg-[#f3f7f3] dark:bg-gray-700 hover:bg-[#e4ede4] dark:hover:bg-gray-600 text-[#0d1b0d] dark:text-gray-200 py-3 rounded-xl text-lg font-semibold transition-colors flex items-center justify-center gap-2">
-                  <span className="text-2xl">⚙️</span>
-                  Configuración
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="w-full bg-red-500 dark:bg-red-600 text-white py-3 rounded-xl text-lg font-semibold transition-colors flex items-center justify-center gap-2"
-                >
-                  <span className="text-2xl">🚪</span>
-                  Cerrar Sesión
-                </button>
-              </div>
-
-              {/* Cambiar contraseña (HU-F11) */}
-              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 transition-colors">
-                <button
-                  onClick={() => { setShowPwdForm(v => !v); setPwdError(""); setPwdSuccess(false); }}
-                  className="w-full flex items-center justify-between text-xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="text-2xl">🔒</span>
-                    Cambiar contraseña
-                  </span>
-                  <span className={`text-[#8bc34a] transition-transform duration-200 ${showPwdForm ? "rotate-180" : ""}`}>▼</span>
-                </button>
-
-                {showPwdForm && (
-                  <div className="mt-5 space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-[#475569] dark:text-gray-400 mb-1">Contraseña actual</label>
-                      <input
-                        type="password"
-                        value={pwdForm.current_password}
-                        onChange={e => setPwdForm(f => ({ ...f, current_password: e.target.value }))}
-                        placeholder="••••••••"
-                        className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base focus:border-[#8bc34a] focus:outline-none dark:bg-gray-700 dark:text-gray-100 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-[#475569] dark:text-gray-400 mb-1">Nueva contraseña</label>
-                      <input
-                        type="password"
-                        value={pwdForm.new_password}
-                        onChange={e => setPwdForm(f => ({ ...f, new_password: e.target.value }))}
-                        placeholder="Mínimo 8 caracteres"
-                        className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base focus:border-[#8bc34a] focus:outline-none dark:bg-gray-700 dark:text-gray-100 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-[#475569] dark:text-gray-400 mb-1">Confirmar nueva contraseña</label>
-                      <input
-                        type="password"
-                        value={pwdForm.confirm_password}
-                        onChange={e => setPwdForm(f => ({ ...f, confirm_password: e.target.value }))}
-                        placeholder="Repita la nueva contraseña"
-                        className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-base focus:border-[#8bc34a] focus:outline-none dark:bg-gray-700 dark:text-gray-100 transition-colors"
-                      />
-                    </div>
-
-                    {pwdError && (
-                      <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
-                        <p className="text-sm font-semibold text-red-600 dark:text-red-400">⚠️ {pwdError}</p>
-                      </div>
-                    )}
-
-                    {pwdSuccess && (
-                      <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-xl px-4 py-3">
-                        <p className="text-sm font-semibold text-green-700 dark:text-green-400">✅ ¡Contraseña actualizada correctamente! Puede seguir navegando.</p>
-                      </div>
-                    )}
-
-                    <button
-                      onClick={handlePwdChange}
-                      disabled={pwdLoading}
-                      className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-3 rounded-xl text-lg font-bold hover:bg-[#7cb342] dark:hover:bg-[#689f38] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {pwdLoading ? "Actualizando..." : "Actualizar contraseña"}
-                    </button>
-                  </div>
+              <div>
+                <h3 className="text-2xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors">
+                  {user.name}
+                </h3>
+                {user.document_number && (
+                  <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">
+                    C.C. {user.document_number}
+                  </p>
                 )}
               </div>
             </div>
 
-            {/* Right Column - Stats and Activity */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Stats Cards */}
-              <div className="grid sm:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-colors">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <p className="text-lg text-[#475569] dark:text-gray-400 mb-2 transition-colors">Total Ventas</p>
-                      <p className="text-4xl font-black text-[#0d1b0d] dark:text-gray-100 transition-colors">{stats.totalSales}</p>
-                    </div>
-                    <span className="text-5xl">💰</span>
-                  </div>
-                  <div className="bg-[#8bc34a10] dark:bg-[#8bc34a20] rounded-xl px-3 py-2 inline-block transition-colors">
-                    <p className="text-sm font-semibold text-[#8bc34a] dark:text-[#9ccc65] transition-colors">+5 este mes</p>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 transition-colors">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <p className="text-lg text-[#475569] dark:text-gray-400 mb-2 transition-colors">Lotes Activos</p>
-                      <p className="text-4xl font-black text-[#0d1b0d] dark:text-gray-100 transition-colors">{stats.activeListings}</p>
-                    </div>
-                    <span className="text-5xl">📦</span>
-                  </div>
-                  <div className="bg-[#fff4e6] dark:bg-orange-900/30 rounded-xl px-3 py-2 inline-block transition-colors">
-                    <p className="text-sm font-semibold text-[#ff8c00] dark:text-orange-400 transition-colors">2 pendientes de revisar</p>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-[#8bc34a] to-[#7cb342] rounded-2xl shadow-lg p-6 sm:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xl text-white opacity-90 mb-2">Ingresos Totales</p>
-                      <p className="text-5xl font-black text-white">{stats.totalRevenue}</p>
-                    </div>
-                    <span className="text-7xl">💵</span>
-                  </div>
-                </div>
+            {/* Mensaje de éxito tras guardar */}
+            {editSuccess && !editMode && (
+              <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-xl px-4 py-3 mb-6">
+                <p className="text-sm font-semibold text-green-700 dark:text-green-400">✅ Perfil actualizado correctamente.</p>
               </div>
+            )}
 
-              {/* Recent Activity */}
-              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-[#0d1b0d] dark:text-gray-100 flex items-center gap-3 transition-colors">
-                    <span className="text-3xl">📊</span>
-                    Actividad Reciente
-                  </h3>
-                  <button className="text-lg text-[#8bc34a] dark:text-[#9ccc65] font-semibold hover:underline transition-colors">
-                    Ver todo
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {recentActivity.map((activity) => (
-                    <div
-                      key={activity.id}
-                      className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-5 flex items-center justify-between hover:bg-[#e4ede4] dark:hover:bg-gray-600 transition-colors"
-                    >
-                      <div className="flex-1">
-                        <p className="text-xl font-semibold text-[#0d1b0d] dark:text-gray-100 mb-1 transition-colors">
-                          {activity.action}
-                        </p>
-                        <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">{activity.date}</p>
-                      </div>
-                      {activity.amount !== "-" && (
-                        <p className="text-2xl font-bold text-[#8bc34a] dark:text-[#9ccc65] transition-colors">{activity.amount}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* My Listings */}
-              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 transition-colors">
-                <h3 className="text-2xl font-bold text-[#0d1b0d] dark:text-gray-100 mb-6 flex items-center gap-3 transition-colors">
-                  <span className="text-3xl">🥑</span>
-                  Mis Lotes Publicados
-                </h3>
-
-                <div className="space-y-4">
-                  <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-5 flex items-center gap-4 transition-colors">
-                    <div className="size-20 bg-gradient-to-br from-[#8bc34a] to-[#7cb342] rounded-xl flex items-center justify-center text-5xl">
-                      🥑
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-xl font-bold text-[#0d1b0d] dark:text-gray-100 mb-1 transition-colors">Hass Premium</h4>
-                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">500 kg • $4,500/kg</p>
-                      <div className="flex gap-2 mt-2">
-                        <span className="bg-[#8bc34a] dark:bg-[#7cb342] text-white px-3 py-1 rounded-full text-sm font-bold">
-                          Activo
-                        </span>
-                        <span className="bg-white dark:bg-gray-600 text-[#475569] dark:text-gray-300 px-3 py-1 rounded-full text-sm font-semibold transition-colors">
-                          12 visitas
-                        </span>
-                      </div>
-                    </div>
-                    <button className="text-lg text-[#8bc34a] dark:text-[#9ccc65] font-bold hover:underline transition-colors">
-                      Editar
-                    </button>
+            {/* Modo visualización */}
+            {!editMode ? (
+              <div className="space-y-5">
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-4 transition-colors">
+                    <p className="text-xs font-semibold text-[#475569] dark:text-gray-400 mb-1 flex items-center gap-1"><span>👤</span> Nombre</p>
+                    <p className="text-lg font-bold text-[#0d1b0d] dark:text-gray-100">{user.name || "—"}</p>
                   </div>
-
-                  <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-5 flex items-center gap-4 transition-colors">
-                    <div className="size-20 bg-gradient-to-br from-[#8bc34a] to-[#7cb342] rounded-xl flex items-center justify-center text-5xl">
-                      🥑
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-xl font-bold text-[#0d1b0d] dark:text-gray-100 mb-1 transition-colors">Hass Exportación</h4>
-                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">1,000 kg • $5,200/kg</p>
-                      <div className="flex gap-2 mt-2">
-                        <span className="bg-[#8bc34a] dark:bg-[#7cb342] text-white px-3 py-1 rounded-full text-sm font-bold">
-                          Activo
-                        </span>
-                        <span className="bg-white dark:bg-gray-600 text-[#475569] dark:text-gray-300 px-3 py-1 rounded-full text-sm font-semibold transition-colors">
-                          28 visitas
-                        </span>
-                      </div>
-                    </div>
-                    <button className="text-lg text-[#8bc34a] dark:text-[#9ccc65] font-bold hover:underline transition-colors">
-                      Editar
-                    </button>
+                  <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-4 transition-colors">
+                    <p className="text-xs font-semibold text-[#475569] dark:text-gray-400 mb-1 flex items-center gap-1"><span>✉️</span> Correo</p>
+                    <p className="text-lg font-bold text-[#0d1b0d] dark:text-gray-100 break-all">{user.email || "—"}</p>
                   </div>
-
-                  <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-5 flex items-center gap-4 opacity-60 transition-colors">
-                    <div className="size-20 bg-[#e4ede4] dark:bg-gray-600 rounded-xl flex items-center justify-center text-5xl transition-colors">
-                      🥑
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-xl font-bold text-[#0d1b0d] dark:text-gray-300 mb-1 transition-colors">Hass Selecto</h4>
-                      <p className="text-base text-[#475569] dark:text-gray-400 transition-colors">750 kg • $4,800/kg</p>
-                      <div className="flex gap-2 mt-2">
-                        <span className="bg-[#94a3b8] text-white px-3 py-1 rounded-full text-sm font-bold">
-                          Vendido
-                        </span>
-                        <span className="bg-white dark:bg-gray-600 text-[#475569] dark:text-gray-300 px-3 py-1 rounded-full text-sm font-semibold transition-colors">
-                          Hace 2 días
-                        </span>
-                      </div>
-                    </div>
-                    <button className="text-lg text-[#475569] dark:text-gray-400 font-bold transition-colors">
-                      Ver
-                    </button>
+                  <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-4 transition-colors">
+                    <p className="text-xs font-semibold text-[#475569] dark:text-gray-400 mb-1 flex items-center gap-1"><span>📞</span> Teléfono</p>
+                    <p className="text-lg font-bold text-[#0d1b0d] dark:text-gray-100">{user.phone || "No registrado"}</p>
+                  </div>
+                  <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-4 transition-colors">
+                    <p className="text-xs font-semibold text-[#475569] dark:text-gray-400 mb-1 flex items-center gap-1"><span>📍</span> Ubicación</p>
+                    <p className="text-lg font-bold text-[#0d1b0d] dark:text-gray-100">{user.location || "No registrada"}</p>
                   </div>
                 </div>
 
-                <button className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-4 rounded-2xl text-xl font-bold hover:bg-[#7cb342] dark:hover:bg-[#689f38] transition-colors mt-6">
-                  + Publicar Nuevo Lote
+                <button
+                  onClick={openEdit}
+                  className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-4 rounded-2xl text-xl font-bold hover:bg-[#7cb342] dark:hover:bg-[#689f38] transition-colors mt-2"
+                >
+                  ✏️ Editar Perfil
                 </button>
               </div>
-            </div>
+
+            ) : (
+              /* Modo edición */
+              <div className="space-y-5">
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className={labelCls}>👤 Nombre completo</label>
+                    <input
+                      type="text"
+                      value={editForm.name}
+                      onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                      className={inputCls}
+                      placeholder="Su nombre completo"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>✉️ Correo electrónico</label>
+                    <input
+                      type="email"
+                      value={editForm.email}
+                      onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))}
+                      className={inputCls}
+                      placeholder="correo@ejemplo.com"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>📞 Teléfono / WhatsApp</label>
+                    <input
+                      type="tel"
+                      value={editForm.phone}
+                      onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
+                      className={inputCls}
+                      placeholder="+57 300 000 0000"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>📍 Ubicación</label>
+                    <input
+                      type="text"
+                      value={editForm.location}
+                      onChange={e => setEditForm(f => ({ ...f, location: e.target.value }))}
+                      className={inputCls}
+                      placeholder="Municipio, Departamento"
+                    />
+                  </div>
+                </div>
+
+                {editError && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+                    <p className="text-sm font-semibold text-red-600 dark:text-red-400">⚠️ {editError}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={editLoading}
+                    className="flex-1 bg-[#8bc34a] dark:bg-[#7cb342] text-white py-4 rounded-2xl text-xl font-bold hover:bg-[#7cb342] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {editLoading ? "Guardando..." : "💾 Guardar Cambios"}
+                  </button>
+                  <button
+                    onClick={() => { setEditMode(false); setEditError(""); }}
+                    disabled={editLoading}
+                    className="px-6 py-4 rounded-2xl text-xl font-bold bg-gray-100 dark:bg-gray-700 text-[#475569] dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Cambiar contraseña (HU-F11) */}
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 transition-colors">
+            <button
+              onClick={() => { setShowPwdForm(v => !v); setPwdError(""); setPwdSuccess(false); }}
+              className="w-full flex items-center justify-between text-xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors"
+            >
+              <span className="flex items-center gap-2"><span className="text-2xl">🔒</span> Cambiar contraseña</span>
+              <span className={`text-[#8bc34a] transition-transform duration-200 ${showPwdForm ? "rotate-180" : ""}`}>▼</span>
+            </button>
+
+            {showPwdForm && (
+              <div className="mt-5 space-y-4">
+                <div>
+                  <label className={labelCls}>Contraseña actual</label>
+                  <input type="password" value={pwdForm.current_password}
+                    onChange={e => setPwdForm(f => ({ ...f, current_password: e.target.value }))}
+                    placeholder="••••••••" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Nueva contraseña</label>
+                  <input type="password" value={pwdForm.new_password}
+                    onChange={e => setPwdForm(f => ({ ...f, new_password: e.target.value }))}
+                    placeholder="Mínimo 8 caracteres" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Confirmar nueva contraseña</label>
+                  <input type="password" value={pwdForm.confirm_password}
+                    onChange={e => setPwdForm(f => ({ ...f, confirm_password: e.target.value }))}
+                    placeholder="Repita la nueva contraseña" className={inputCls} />
+                </div>
+
+                {pwdError && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+                    <p className="text-sm font-semibold text-red-600 dark:text-red-400">⚠️ {pwdError}</p>
+                  </div>
+                )}
+                {pwdSuccess && (
+                  <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-xl px-4 py-3">
+                    <p className="text-sm font-semibold text-green-700 dark:text-green-400">✅ ¡Contraseña actualizada! Puede seguir navegando.</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handlePwdChange}
+                  disabled={pwdLoading}
+                  className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-3 rounded-xl text-lg font-bold hover:bg-[#7cb342] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {pwdLoading ? "Actualizando..." : "Actualizar contraseña"}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Acciones */}
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 flex flex-col sm:flex-row gap-3 transition-colors">
+            <button
+              onClick={() => navigate("/history")}
+              className="flex-1 bg-[#f3f7f3] dark:bg-gray-700 hover:bg-[#e4ede4] dark:hover:bg-gray-600 text-[#0d1b0d] dark:text-gray-200 py-4 rounded-2xl text-lg font-bold transition-colors flex items-center justify-center gap-2"
+            >
+              <span className="text-2xl">📤</span> Publicar Lote Nuevo
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex-1 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-2 border-red-200 dark:border-red-800 py-4 rounded-2xl text-lg font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors flex items-center justify-center gap-2"
+            >
+              <span className="text-2xl">🚪</span> Cerrar Sesión
+            </button>
+          </div>
+
         </div>
       </main>
     </div>

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
-from app.schemas.user import UserCreate, UserLogin, UserResponse, ChangePasswordRequest
+from app.schemas.user import UserCreate, UserLogin, UserResponse, ChangePasswordRequest, UserUpdate
 from app.services.user_service import UserService
 from app.core.database import get_db
 from app.core.config import settings
@@ -68,6 +68,19 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
         "access_token": token,
         "token_type": "bearer",
     }
+
+@router.put("/me", response_model=UserResponse)
+def update_profile(
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    service = UserService(db)
+    try:
+        updated = service.update_user(user_id, data)
+        return updated
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.post("/change-password")
 def change_password(

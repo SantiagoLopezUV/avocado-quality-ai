@@ -27,6 +27,17 @@ class UserRepository:
     def email_exists(self, email: str) -> bool:
         return self.db.query(User).filter(User.email == email).first() is not None
 
+    def update_user(self, user_id: uuid.UUID, data: dict) -> Optional[User]:
+        user = self.get_user_by_id(user_id)
+        if not user:
+            return None
+        for key, value in data.items():
+            if hasattr(user, key):
+                setattr(user, key, value)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
     def update_password(self, user_id: uuid.UUID, new_hashed_password: str) -> bool:
         user = self.get_user_by_id(user_id)
         if not user:
