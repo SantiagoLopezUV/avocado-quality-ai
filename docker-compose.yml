@@ -1,48 +1,43 @@
 
 services:
 
-  db: #Servicio de base de datos PostgreSQL
+  db:
     image: postgres:15-alpine
     container_name: agrodata-db
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: alejo2705
-      POSTGRES_DB: avocado-quality-ai
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
   backend:
     build:
       context: .
       dockerfile: app/Dockerfile
     container_name: agrodata-api
-    env_file: #Cargar variables de entorno desde el archivo .env
+    env_file:
       - .env
     ports:
       - "8000:8000"
     volumes:
-      - .:/app # Monta el directorio actual en /app dentro del contenedor
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload #--reload para que se reinicie el servidor cada vez que se hagan cambios en el código
+      - ./app:/app
+      - ./data:/data
     depends_on:
       - db
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev        # desarrollo con hot reload
-      #dockerfile: Dockerfile           # producción con Nginx
+      dockerfile: Dockerfile
     container_name: agrodata-web
     ports:
-      - "5173:5173"                     # ← puerto para desarrollo con Vite
-      #- "80:80"                        # ← descomentar para producción
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: npm run dev -- --host      # ← necesario para que Vite escuche fuera del contenedor
+      - "80:80"
     depends_on:
       - backend
 
 volumes:
-  postgres_data: #declarar el volumen para persistencia de datos
+  postgres_data:
