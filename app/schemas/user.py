@@ -20,6 +20,19 @@ class UserLogin(BaseModel):
     password: str
 
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    location: Optional[str] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+    confirm_password: str
+
+
 class UserResponse(BaseModel):
     id: UUID
     document_number: Optional[str]
@@ -27,7 +40,8 @@ class UserResponse(BaseModel):
     email: str
     phone: Optional[str]
     location: Optional[str]
+    profile_picture: Optional[str] = None
     created_at: datetime
-    
+
     class Config:
         from_attributes = True

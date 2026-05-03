@@ -15,18 +15,34 @@ class AnalysisRepository:
         self.db = db
 
     def get_active_model_version_id(self) -> Optional[uuid.UUID]:
-        """Obtiene el ID de la versión de modelo activa más reciente."""
+        """Obtiene el ID de la versión de modelo más reciente, o crea una por defecto si la tabla está vacía."""
         result = self.db.execute(
-            text(
-                """
-                SELECT id FROM model_versions
-                WHERE is_active = TRUE
-                ORDER BY created_at DESC
-                LIMIT 1
-                """
-            )
+            text("SELECT id FROM model_versions ORDER BY created_at DESC LIMIT 1")
         ).fetchone()
-        return result[0] if result else None
+
+        if result:
+            return result[0]
+
+        # Tabla vacía: insertar un registro inicial para el modelo en producción
+        new_id = uuid.uuid4()
+        now = datetime.now(timezone.utc)
+        try:
+            self.db.execute(
+                text(
+                    """
+                    INSERT INTO model_versions (id, name, created_at)
+                    VALUES (:id, :name, :created_at)
+                    """
+                ),
+                {"id": new_id, "name": "YOLOv8-v2-production", "created_at": now},
+            )
+            self.db.flush()
+            return new_id
+        except Exception:
+            # Si el esquema tiene columnas adicionales requeridas, retornar None
+            # para que el llamador decida si continuar sin model_version_id
+            self.db.rollback()
+            return None
 
     def save_image(
         self,
@@ -81,7 +97,6 @@ class AnalysisRepository:
         confidence: float,
         price_sale: float,
         price_purchase: float,
-        message: str,
         now: datetime,
     ) -> None:
         """Inserta un registro en la tabla analysis_results."""
@@ -91,13 +106,12 @@ class AnalysisRepository:
                 INSERT INTO analysis_results (
                     id, analysis_id, model_version_id,
                     ripeness_level, damage_level, confidence,
-                    price_sale, price_purchase, message, created_at
+                    price_sale, price_purchase, created_at
                 )
                 VALUES (
                     :id, :analysis_id, :model_version_id,
                     CAST(:ripeness_level AS ripeness_enum), CAST(:damage_level AS damage_enum),
-                    :confidence, :price_sale, :price_purchase,
-                    :message, :created_at
+                    :confidence, :price_sale, :price_purchase, :created_at
                 )
                 """
             ),
@@ -110,7 +124,6 @@ class AnalysisRepository:
                 "confidence": confidence / 100,  # BD guarda 0-1, modelo retorna 0-100
                 "price_sale": price_sale,
                 "price_purchase": price_purchase,
-                "message": message,
                 "created_at": now,
             },
         )
@@ -125,7 +138,7 @@ class AnalysisRepository:
         confidence: float,
         price_sale: float,
         price_purchase: float,
-        message: str,
+        message: str = "",
     ) -> tuple[uuid.UUID, uuid.UUID]:
         """
         Ejecuta las 3 inserciones en una sola transacción atómica.
@@ -133,10 +146,9 @@ class AnalysisRepository:
         """
         now = datetime.now(timezone.utc)
 
-        # 1. Verificar model_version activa
         model_version_id = self.get_active_model_version_id()
         if model_version_id is None:
-            raise ValueError("No hay una versión de modelo activa en la BD.")
+            raise ValueError("No hay versiones de modelo registradas en la BD.")
 
         image_id = uuid.uuid4()
         analysis_id = uuid.uuid4()
@@ -147,7 +159,7 @@ class AnalysisRepository:
         self.save_analysis_result(
             result_id, analysis_id, model_version_id,
             ripeness_level, damage_level, confidence,
-            price_sale, price_purchase, message, now,
+            price_sale, price_purchase, now,
         )
 
         self.db.commit()
@@ -164,7 +176,6 @@ class AnalysisRepository:
                     ar.confidence,
                     ar.price_sale,
                     ar.price_purchase,
-                    ar.message,
                     a.created_at,
                     i.file_path
                 FROM analyses a
@@ -199,7 +210,6 @@ class AnalysisRepository:
                     ar.confidence,
                     ar.price_sale,
                     ar.price_purchase,
-                    ar.message,
                     a.created_at,
                     i.file_path
                 FROM analyses a
@@ -238,7 +248,6 @@ class AnalysisRepository:
                     ar.confidence,
                     ar.price_sale,
                     ar.price_purchase,
-                    ar.message,
                     a.created_at,
                     i.file_path,
                     i.filename

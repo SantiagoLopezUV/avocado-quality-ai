@@ -273,7 +273,8 @@ async def analyze_image(
                 saved_to_history=False,
             )
 
-        # 5. Usuario autenticado → persistir en BD
+        # 5. Usuario autenticado → persistir en BD (no-fatal: el análisis ya funcionó)
+        analysis_id, image_id, saved_to_history = None, None, False
         try:
             repo = AnalysisRepository(db)
             analysis_id, image_id = repo.persist_full_analysis(
@@ -286,15 +287,12 @@ async def analyze_image(
                 price_purchase=price_purchase,
                 message=message,
             )
-        except ValueError as e:
-            # model_versions sin registro activo
-            raise HTTPException(status_code=500, detail=str(e))
+            saved_to_history = True
         except Exception as e:
             db.rollback()
-            logger.exception("Error persistiendo análisis en BD: %s", e)
-            raise HTTPException(status_code=500, detail="Error guardando análisis en base de datos.")
+            logger.exception("Error persistiendo análisis en BD (el resultado sí se retorna): %s", e)
 
-        # 6. Respuesta con IDs reales
+        # 6. Respuesta — con o sin IDs de BD según si se pudo guardar
         return AnalysisResultOut(
             analysis_id=analysis_id,
             image_id=image_id,
@@ -310,7 +308,7 @@ async def analyze_image(
             market_destination=market_dest,
             analyzed_at=now,
             user_id=user_id,
-            saved_to_history=True,
+            saved_to_history=saved_to_history,
         )
 
     except HTTPException:
