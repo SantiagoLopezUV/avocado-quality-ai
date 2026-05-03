@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
+import ConfirmLogoutModal from "../components/ConfirmLogoutModal";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function MarketplacePage() {
@@ -10,10 +11,8 @@ export default function MarketplacePage() {
   const [selectedLot, setSelectedLot] = useState(null);
   const [filter, setFilter] = useState("todos");
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const handleLogout = () => { logout(); navigate("/"); };
 
   const lots = [
     {
@@ -125,12 +124,18 @@ export default function MarketplacePage() {
             <ThemeToggle />
             {user && (
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutModal(true)}
                 className="flex items-center gap-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
               >
                 <span>🚪</span>
                 Salir
               </button>
+            )}
+            {showLogoutModal && (
+              <ConfirmLogoutModal
+                onConfirm={handleLogout}
+                onCancel={() => setShowLogoutModal(false)}
+              />
             )}
           </div>
         </div>

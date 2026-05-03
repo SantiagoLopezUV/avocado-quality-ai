@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
 import ConfidencePanel from "../components/ConfidencePanel";
+import ConfirmLogoutModal from "../components/ConfirmLogoutModal";
 import { useAuth } from "../contexts/AuthContext";
 
 const API_BASE = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8001"}/api/v1`;
@@ -12,6 +13,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, logout, getToken } = useAuth();
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -264,12 +266,18 @@ export default function DashboardPage() {
             <ThemeToggle />
             {user && (
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutModal(true)}
                 className="flex items-center gap-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
               >
                 <span>🚪</span>
                 Salir
               </button>
+            )}
+            {showLogoutModal && (
+              <ConfirmLogoutModal
+                onConfirm={handleLogout}
+                onCancel={() => setShowLogoutModal(false)}
+              />
             )}
           </div>
         </div>

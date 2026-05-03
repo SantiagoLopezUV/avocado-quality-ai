@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
+import ConfirmLogoutModal from "../components/ConfirmLogoutModal";
 import { useAuth } from "../contexts/AuthContext";
 import { getAnalysisHistory } from "../services/api";
 
@@ -71,6 +72,7 @@ export default function HistoryPage() {
       .finally(() => setLoading(false));
   }, [user, navigate, getToken]);
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const handleLogout = () => { logout(); navigate("/"); };
 
   // ── Limpiar filtros ─────────────────────────────────────────────────────────
@@ -143,9 +145,15 @@ export default function HistoryPage() {
               </button>
             </nav>
             <ThemeToggle />
-            <button onClick={handleLogout} className="flex items-center gap-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
+            <button onClick={() => setShowLogoutModal(true)} className="flex items-center gap-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
               <span>🚪</span>Salir
             </button>
+            {showLogoutModal && (
+              <ConfirmLogoutModal
+                onConfirm={handleLogout}
+                onCancel={() => setShowLogoutModal(false)}
+              />
+            )}
           </div>
         </div>
       </header>
