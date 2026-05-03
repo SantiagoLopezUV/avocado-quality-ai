@@ -230,6 +230,56 @@ class AnalysisRepository:
             "total_pages": -(-total // page_size),  # ceil sin importar math
             "items": [dict(r._mapping) for r in rows],
         }
+    
+    def delete_analysis(self, analysis_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        """
+        Elimina un análisis y sus registros relacionados.
+        Verifica que pertenezca al usuario antes de borrar.
+        Devuelve True si se eliminó, False si no existía o no era del usuario.
+        """
+        # Verificar que el análisis existe y pertenece al usuario
+        row = self.db.execute(
+            text(
+                """
+                SELECT a.id, i.file_path
+                FROM analyses a
+                JOIN images i ON i.id = a.image_id
+                WHERE a.id = :analysis_id
+                AND a.user_id = :user_id
+                """
+            ),
+            {"analysis_id": analysis_id, "user_id": user_id},
+        ).fetchone()
+
+        if row is None:
+            return False
+
+        file_path = row._mapping["file_path"]
+
+        # Eliminar en orden por foreign keys:
+        # analysis_results → analyses → images
+        self.db.execute(
+            text("DELETE FROM analysis_results WHERE analysis_id = :aid"),
+            {"aid": analysis_id},
+        )
+        self.db.execute(
+            text("DELETE FROM analyses WHERE id = :aid AND user_id = :uid"),
+            {"aid": analysis_id, "uid": user_id},
+        )
+        self.db.execute(
+            text("DELETE FROM images WHERE id = (SELECT image_id FROM analyses WHERE id = :aid)"),
+            {"aid": analysis_id},
+        )
+
+        self.db.commit()
+
+        # Borrar imagen del disco si existe
+        path = Path(file_path)
+        if path.exists():
+            path.unlink(missing_ok=True)
+            logger.info("Imagen eliminada del disco: %s", file_path)
+
+        return True
 
     def get_analysis_detail(self, analysis_id: uuid.UUID,
                             user_id: uuid.UUID) -> Optional[dict]:
