@@ -50,7 +50,11 @@ export function AuthProvider({ children }) {
       const userToStore = {
         id: response.user_id,
         name: response.name,
-        email: email,
+        email: response.email || email,
+        phone: response.phone || null,
+        location: response.location || null,
+        document_number: response.document_number || null,
+        profile_picture: response.profile_picture || null,
       };
       setUser(userToStore);
       localStorage.setItem("avocado_user", JSON.stringify(userToStore));
@@ -63,7 +67,8 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("avocado_user");
-    localStorage.removeItem("avocado_token"); // ← limpiar token al salir
+    localStorage.removeItem("avocado_token");
+    sessionStorage.removeItem("avocado_active_diagnosis"); // HU-F08: limpiar diagnóstico al cerrar sesión
   };
 
   const updateUserData = (newData) => {
