@@ -152,3 +152,32 @@ class BatchRepository:
         )
         self.db.commit()
         return True
+    
+    # ── Renombrar lote ────────────────────────────────────────────────────────────
+    def rename(self, batch_id: uuid.UUID, user_id: uuid.UUID, new_name: str) -> Optional[dict]:
+        """
+        Renombra un lote. Verifica que pertenezca al usuario.
+        Devuelve el lote actualizado o None si no existe.
+        """
+        exists = self.db.execute(
+            text("SELECT id FROM batches WHERE id = :bid AND user_id = :uid"),
+            {"bid": batch_id, "uid": user_id},
+        ).fetchone()
+
+        if exists is None:
+            return None
+
+        now = datetime.now(timezone.utc)
+        self.db.execute(
+            text(
+                """
+                UPDATE batches
+                SET name = :name, updated_at = :now
+                WHERE id = :bid
+                """
+            ),
+            {"name": new_name, "bid": batch_id, "now": now},
+        )
+        self.db.commit()
+
+        return {"id": batch_id, "name": new_name, "updated_at": now}

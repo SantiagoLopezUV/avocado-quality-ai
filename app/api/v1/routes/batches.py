@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.schemas.batch import BatchCreate, BatchOut, BatchDetailOut
+from app.schemas.batch import BatchCreate, BatchOut, BatchDetailOut, BatchRename
 from app.repositories.batch_repository import BatchRepository
 from app.api.v1.routes.analysis import get_optional_user_id  # reutilizamos el helper
 
@@ -119,3 +119,27 @@ def delete_batch(
             detail="Lote no encontrado o no tienes permiso para eliminarlo.",
         )
     return {"message": "Lote eliminado. Los análisis quedaron sin lote asignado."}
+
+
+# ── Renombrar lote ────────────────────────────────────────────────────────────
+@router.patch(
+    "/{batch_id}",
+    response_model=BatchOut,
+    status_code=status.HTTP_200_OK,
+    summary="Renombrar un lote existente",
+)
+def rename_batch(
+    batch_id: uuid.UUID,
+    body: BatchRename,
+    user_id: uuid.UUID = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    repo = BatchRepository(db)
+    updated = repo.rename(batch_id, user_id, body.name)
+
+    if updated is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lote no encontrado o no tienes permiso para modificarlo.",
+        )
+    return updated
