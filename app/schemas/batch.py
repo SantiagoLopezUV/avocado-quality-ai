@@ -9,6 +9,11 @@ class BatchCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, example="Cosecha Abril")
 
 
+class BatchRename(BaseModel):
+    """Body para renombrar un lote."""
+    name: str = Field(..., min_length=1, max_length=100, example="Cosecha Mayo")
+
+
 class BatchOut(BaseModel):
     """Respuesta al listar o crear un lote."""
     id: uuid.UUID
@@ -30,8 +35,3 @@ class BatchDetailOut(BaseModel):
 
     class Config:
         from_attributes = True
-    
-    
-    class BatchRename(BaseModel):
-        """Body para renombrar un lote."""
-        name: str = Field(..., min_length=1, max_length=100, example="Cosecha Mayo")
