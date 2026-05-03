@@ -3,6 +3,10 @@ from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+import logging
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class AnalysisRepository:
