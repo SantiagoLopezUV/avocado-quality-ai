@@ -221,7 +221,7 @@ export default function ProfilePage() {
       {/* Header */}
       <header className="bg-[#e8f5e9] dark:bg-gray-800 border-b-2 border-[#c5e1a5] dark:border-gray-700 px-6 py-6 sticky top-0 z-50 transition-colors">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button onClick={() => navigate("/")} className="hover:opacity-80 transition-opacity">
+          <button onClick={() => !user && navigate("/")} className={`transition-opacity ${!user ? "hover:opacity-80 cursor-pointer" : "cursor-default"}`}>
             <Logo size="lg" showText={true} />
           </button>
           <div className="flex items-center gap-6">
