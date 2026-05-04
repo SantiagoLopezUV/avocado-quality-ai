@@ -131,7 +131,7 @@ export default function HelpPage() {
                 Ayuda
               </button>
               {user && (
-                <button onClick={() => navigate("/history")} className="text-lg text-gray-900 dark:text-gray-100 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
+                <button onClick={() => navigate("/batches")} className="text-lg text-gray-900 dark:text-gray-100 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
                   Mis Lotes
                 </button>
               )}

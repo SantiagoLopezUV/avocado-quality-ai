@@ -237,7 +237,7 @@ export default function ProfilePage() {
               <button onClick={() => navigate("/help")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
                 Ayuda
               </button>
-              <button onClick={() => navigate("/history")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
+              <button onClick={() => navigate("/batches")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
                 Mis Lotes
               </button>
               <button onClick={() => navigate("/profile")} className="text-lg text-[#8bc34a] dark:text-[#9ccc65] font-bold border-b-4 border-[#8bc34a] dark:border-[#9ccc65] pb-1 transition-colors">
@@ -508,7 +508,7 @@ export default function ProfilePage() {
           {/* Acciones */}
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 flex flex-col sm:flex-row gap-3 transition-colors">
             <button
-              onClick={() => navigate("/history")}
+              onClick={() => navigate("/batches")}
               className="flex-1 bg-[#f3f7f3] dark:bg-gray-700 hover:bg-[#e4ede4] dark:hover:bg-gray-600 text-[#0d1b0d] dark:text-gray-200 py-4 rounded-2xl text-lg font-bold transition-colors flex items-center justify-center gap-2"
             >
               <span className="text-2xl">📤</span> Publicar Lote Nuevo

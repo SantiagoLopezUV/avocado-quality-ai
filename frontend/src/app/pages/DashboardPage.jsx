@@ -5,6 +5,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import ConfidencePanel from "../components/ConfidencePanel";
 import ConfirmLogoutModal from "../components/ConfirmLogoutModal";
 import { useAuth } from "../contexts/AuthContext";
+import { listBatches, createBatch, assignAnalysisToBatch } from "../services/api";
 
 const API_BASE = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8001"}/api/v1`;
 const DIAGNOSIS_KEY = "avocado_active_diagnosis";
@@ -26,6 +27,14 @@ export default function DashboardPage() {
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  // Estados para el panel de guardado en lote
+  const [batches, setBatches] = useState([]);
+  const [showSavePanel, setShowSavePanel] = useState(false);
+  const [saveTarget, setSaveTarget] = useState("individual");
+  const [newBatchName, setNewBatchName] = useState("");
+  const [savingBatch, setSavingBatch] = useState(false);
+  const [savedBatchName, setSavedBatchName] = useState(null);
+
   // HU-F08: restaurar diagnóstico activo desde sessionStorage al montar
   useEffect(() => {
     try {
@@ -42,12 +51,54 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // Cargar lotes cuando el usuario está autenticado
+  useEffect(() => {
+    if (user) {
+      listBatches(getToken()).then(setBatches).catch(() => {});
+    }
+  }, [user]);
+
   // HU-F08: limpiar diagnóstico activo (imagen + resultados + sesión)
   const clearDiagnosis = () => {
     setSelectedImage(null);
     setImageFile(null);
     setResult(null);
+    setShowSavePanel(false);
+    setSaveTarget("individual");
+    setNewBatchName("");
+    setSavedBatchName(null);
     sessionStorage.removeItem(DIAGNOSIS_KEY);
+  };
+
+  // Guardar análisis en el lote seleccionado
+  const handleSaveToTarget = async () => {
+    if (!result?.analysis_id) return;
+    if (saveTarget === "individual") {
+      setSavedBatchName("análisis individuales");
+      setShowSavePanel(false);
+      return;
+    }
+    setSavingBatch(true);
+    try {
+      let targetBatchId = saveTarget;
+      let targetBatchName = "";
+      if (saveTarget === "new") {
+        if (!newBatchName.trim()) return;
+        const newBatch = await createBatch(getToken(), newBatchName.trim());
+        targetBatchId = newBatch.id;
+        targetBatchName = newBatch.name;
+        setBatches(prev => [...prev, newBatch]);
+      } else {
+        targetBatchName = batches.find(b => b.id === saveTarget)?.name || "";
+      }
+      await assignAnalysisToBatch(getToken(), targetBatchId, result.analysis_id);
+      setSavedBatchName(targetBatchName);
+      setShowSavePanel(false);
+    } catch (err) {
+      alert("Error al guardar en lote: " + err.message);
+    } finally {
+      setSavingBatch(false);
+    }
   };
 
   // Traducir niveles de madurez
@@ -82,6 +133,10 @@ export default function DashboardPage() {
     }
 
     setAnalyzing(true);
+    setShowSavePanel(false);
+    setSaveTarget("individual");
+    setNewBatchName("");
+    setSavedBatchName(null);
     const formData = new FormData();
     formData.append("file", imageFile);
 
@@ -152,6 +207,7 @@ export default function DashboardPage() {
 
         // Indica si el lote quedó guardado en BD
         savedToHistory: data.saved_to_history || false,
+        analysis_id: data.analysis_id || null,
       };
 
       // HU-F08: imagen anotada con bounding boxes o la original subida
@@ -163,6 +219,13 @@ export default function DashboardPage() {
 
       if (data.image_base64) {
         setSelectedImage(newSelectedImage);
+      }
+
+      // Mostrar panel de guardado solo si el análisis fue persistido
+      if (newResult.analysis_id || data.analysis_id) {
+        // Refrescar lotes para tenerlos actualizados
+        listBatches(getToken()).then(setBatches).catch(() => {});
+        setShowSavePanel(true);
       }
 
       // HU-F08: persistir diagnóstico activo en sessionStorage
@@ -249,7 +312,7 @@ export default function DashboardPage() {
                 Ayuda
               </button>
               {user && (
-                <button onClick={() => navigate("/history")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
+                <button onClick={() => navigate("/batches")} className="text-lg text-[#0d1b0d] dark:text-gray-200 hover:text-[#8bc34a] dark:hover:text-[#9ccc65] font-medium transition-colors">
                   Mis Lotes
                 </button>
               )}
@@ -627,38 +690,77 @@ export default function DashboardPage() {
                     </p>
                   )}
 
-                  {/* Estado de guardado en Mis Lotes */}
-                  {result.savedToHistory ? (
-                    // ✅ Guardado exitoso — botón directo a Mis Lotes
+                  {/* ── Panel de guardado en lote ── */}
+                  {user && showSavePanel && !savedBatchName && (
+                    <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-5 border-2 border-[#c5e1a5] dark:border-gray-600">
+                      <p className="text-base font-bold text-[#0d1b0d] dark:text-gray-100 mb-3 flex items-center gap-2">
+                        <span>📂</span> ¿A qué lote deseas asignarlo?
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        <select
+                          value={saveTarget}
+                          onChange={e => { setSaveTarget(e.target.value); setNewBatchName(""); }}
+                          className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 focus:border-[#8bc34a] outline-none dark:bg-gray-800 dark:text-white text-base"
+                        >
+                          <option value="individual">📄 Dejar como análisis individual</option>
+                          {batches.map(b => (
+                            <option key={b.id} value={b.id}>📦 {b.name}</option>
+                          ))}
+                          <option value="new">➕ Crear nuevo lote...</option>
+                        </select>
+
+                        {saveTarget === "new" && (
+                          <input
+                            autoFocus
+                            type="text"
+                            placeholder="Nombre del nuevo lote..."
+                            value={newBatchName}
+                            onChange={e => setNewBatchName(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && handleSaveToTarget()}
+                            className="w-full border-2 border-[#8bc34a] rounded-xl px-4 py-2.5 focus:outline-none dark:bg-gray-800 dark:text-white"
+                          />
+                        )}
+
+                        <button
+                          onClick={handleSaveToTarget}
+                          disabled={savingBatch || (saveTarget === "new" && !newBatchName.trim())}
+                          className="w-full bg-[#8bc34a] dark:bg-[#7cb342] text-white py-3 rounded-xl font-bold hover:bg-[#7cb342] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {savingBatch
+                            ? "Guardando..."
+                            : saveTarget === "individual"
+                              ? "✓ Guardar como análisis individual"
+                              : "📂 Guardar en lote"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Confirmación de guardado */}
+                  {user && savedBatchName && (
                     <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-2xl p-4 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <span className="text-2xl">✅</span>
                         <p className="text-base font-semibold text-green-700 dark:text-green-400">
-                          ¡Lote guardado en Mis Lotes!
+                          Guardado en: <strong>{savedBatchName}</strong>
                         </p>
                       </div>
                       <button
-                        onClick={() => navigate("/history")}
+                        onClick={() => navigate("/batches")}
                         className="flex-shrink-0 bg-[#8bc34a] dark:bg-[#7cb342] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#7cb342] transition-colors"
                       >
                         Ver Mis Lotes →
                       </button>
                     </div>
-                  ) : user ? (
-                    // ⚠️ Logueado pero el guardado falló en el servidor
-                    <div className="bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 rounded-2xl p-4 flex items-center gap-3">
-                      <span className="text-2xl">⚠️</span>
-                      <p className="text-sm font-semibold text-orange-700 dark:text-orange-400">
-                        No se pudo guardar el lote en este momento. El análisis sí fue procesado.
-                      </p>
-                    </div>
-                  ) : (
-                    // 🔒 No logueado — invitar a iniciar sesión
+                  )}
+
+                  {/* Sin sesión — invitar a iniciar sesión */}
+                  {!user && (
                     <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-4 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <span className="text-2xl">💾</span>
                         <p className="text-base font-semibold text-blue-700 dark:text-blue-400">
-                          Inicia sesión para guardar este lote
+                          Inicia sesión para guardar este análisis
                         </p>
                       </div>
                       <button
