@@ -252,4 +252,4 @@ frontend/.env.local
 Thumbs.db
 
 # Claude
-.claude/
+.claude/frontend/.vite
