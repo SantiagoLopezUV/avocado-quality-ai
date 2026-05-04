@@ -1,4 +1,5 @@
 import { createBrowserRouter } from "react-router";
+//import BatchesPage from "./pages/BatchesPage";
 import DashboardPage from "./pages/DashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import HelpPage from "./pages/HelpPage";
@@ -17,6 +18,8 @@ export const router = createBrowserRouter([
       { index: true, Component: LoginPage },
       { path: "dashboard", Component: DashboardPage },
       { path: "marketplace", Component: MarketplacePage },
+      //{ path: "batches", Component: BatchesPage },
+      {path: "batches", Component: HistoryPage }, //
       { path: "history", Component: HistoryPage },
       { path: "profile", Component: ProfilePage },
       { path: "help", Component: HelpPage },

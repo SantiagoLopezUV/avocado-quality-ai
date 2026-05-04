@@ -171,6 +171,58 @@ export async function resetPassword(token, newPassword) {
   }
 }
 
+// ── LOTES (BATCHES) ───────────────────────────────────────────────────────────
+
+export async function listBatches(token) {
+  const response = await fetch(`${API_BASE_URL}/batches`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(response);
+}
+
+export async function createBatch(token, name) {
+  const response = await fetch(`${API_BASE_URL}/batches`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name }),
+  });
+  return handleResponse(response);
+}
+
+export async function getBatchDetail(token, batchId) {
+  const response = await fetch(`${API_BASE_URL}/batches/${batchId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(response);
+}
+
+export async function deleteBatch(token, batchId) {
+  const response = await fetch(`${API_BASE_URL}/batches/${batchId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(response);
+}
+
+export async function deleteAnalysisFromBatch(token, batchId, analysisId) {
+  const response = await fetch(`${API_BASE_URL}/batches/${batchId}/analyses/${analysisId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(response);
+}
+
+export async function assignAnalysisToBatch(token, batchId, analysisId) {
+  const response = await fetch(`${API_BASE_URL}/batches/${batchId}/analyses/${analysisId}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(response);
+}
+
 export async function getAnalysisHistory(token, limit = 20) {
   try {
     const response = await fetch(`${API_BASE_URL}/history?limit=${limit}`, {
@@ -185,4 +237,13 @@ export async function getAnalysisHistory(token, limit = 20) {
     console.error("Error obteniendo historial:", error);
     throw error;
   }
+}
+
+
+export async function deleteAnalysis(token, analysisId) {
+  const response = await fetch(`${API_BASE_URL}/analyses/${analysisId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(response);
 }
