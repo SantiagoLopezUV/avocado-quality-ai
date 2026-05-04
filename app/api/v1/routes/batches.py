@@ -99,11 +99,11 @@ def assign_analysis_to_batch(
     return {"message": "Análisis asignado al lote correctamente."}
 
 
-# ── Eliminar lote ─────────────────────────────────────────────────────────────
+# ── Eliminar lote (y todos sus análisis) ──────────────────────────────────────
 @router.delete(
     "/{batch_id}",
     status_code=status.HTTP_200_OK,
-    summary="Eliminar un lote (los análisis no se eliminan)",
+    summary="Eliminar un lote y todos los análisis que contiene",
 )
 def delete_batch(
     batch_id: uuid.UUID,
@@ -111,14 +111,37 @@ def delete_batch(
     db: Session = Depends(get_db),
 ):
     repo = BatchRepository(db)
-    ok = repo.delete(batch_id, user_id)
+    ok = repo.delete_with_analyses(batch_id, user_id)
 
     if not ok:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Lote no encontrado o no tienes permiso para eliminarlo.",
         )
-    return {"message": "Lote eliminado. Los análisis quedaron sin lote asignado."}
+    return {"message": "Lote y todos sus análisis eliminados correctamente."}
+
+
+# ── Eliminar un análisis dentro de un lote ────────────────────────────────────
+@router.delete(
+    "/{batch_id}/analyses/{analysis_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Eliminar un análisis específico dentro de un lote",
+)
+def delete_analysis_from_batch(
+    batch_id: uuid.UUID,
+    analysis_id: uuid.UUID,
+    user_id: uuid.UUID = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    repo = BatchRepository(db)
+    ok = repo.remove_analysis_from_batch(batch_id, analysis_id, user_id)
+
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Análisis no encontrado en este lote o sin permiso.",
+        )
+    return {"message": "Análisis eliminado del lote correctamente."}
 
 
 # ── Renombrar lote ────────────────────────────────────────────────────────────

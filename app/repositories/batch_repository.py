@@ -71,9 +71,9 @@ class BatchRepository:
                 """
                 SELECT
                     a.id            AS analysis_id,
-                    a.ripeness_level,
-                    a.damage_level,
-                    a.confidence,
+                    ar.ripeness_level,
+                    ar.damage_level,
+                    ar.confidence,
                     ar.price_sale,
                     ar.price_purchase,
                     ar.message,
@@ -153,6 +153,95 @@ class BatchRepository:
         self.db.commit()
         return True
     
+    # ── Eliminar lote + todos sus análisis ───────────────────────────────────────
+    def delete_with_analyses(self, batch_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        exists = self.db.execute(
+            text("SELECT id FROM batches WHERE id = :bid AND user_id = :uid"),
+            {"bid": batch_id, "uid": user_id},
+        ).fetchone()
+        if exists is None:
+            return False
+
+        # Obtener análisis del lote con sus image_ids y rutas de archivo
+        analyses = self.db.execute(
+            text(
+                """
+                SELECT a.id AS analysis_id, a.image_id, i.file_path
+                FROM analyses a
+                JOIN images i ON i.id = a.image_id
+                WHERE a.batch_id = :bid
+                """
+            ),
+            {"bid": batch_id},
+        ).fetchall()
+
+        for row in analyses:
+            analysis_id = row._mapping["analysis_id"]
+            image_id    = row._mapping["image_id"]
+            file_path   = row._mapping["file_path"]
+
+            self.db.execute(
+                text("DELETE FROM analysis_results WHERE analysis_id = :aid"),
+                {"aid": analysis_id},
+            )
+            self.db.execute(
+                text("DELETE FROM analyses WHERE id = :aid"),
+                {"aid": analysis_id},
+            )
+            self.db.execute(
+                text("DELETE FROM images WHERE id = :iid"),
+                {"iid": image_id},
+            )
+            path = Path(file_path)
+            if path.exists():
+                path.unlink(missing_ok=True)
+
+        self.db.execute(text("DELETE FROM batches WHERE id = :bid"), {"bid": batch_id})
+        self.db.commit()
+        return True
+
+    # ── Eliminar un análisis de un lote ───────────────────────────────────────
+    def remove_analysis_from_batch(
+        self, batch_id: uuid.UUID, analysis_id: uuid.UUID, user_id: uuid.UUID
+    ) -> bool:
+
+        batch_exists = self.db.execute(
+            text("SELECT id FROM batches WHERE id = :bid AND user_id = :uid"),
+            {"bid": batch_id, "uid": user_id},
+        ).fetchone()
+        
+        if batch_exists is None:
+            return False
+
+        row = self.db.execute(
+            text("SELECT id FROM analyses WHERE id = :aid AND batch_id = :bid AND user_id = :uid"),
+            {"aid": analysis_id, "bid": batch_id, "uid": user_id},
+        ).fetchone()
+        
+        if row is None:
+            return False
+        # Desasociar el análisis del lote (batch_id = NULL)
+        self.db.execute(
+            text("UPDATE analyses SET batch_id = NULL WHERE id = :aid"),
+            {"aid": analysis_id},
+        )
+        
+        # Decrementar contador del lote
+        self.db.execute(
+            text(
+                """
+                UPDATE batches
+                SET total_count = GREATEST(total_count - 1, 0), updated_at = :now
+                WHERE id = :bid
+                """
+            ),
+            {"now": datetime.now(timezone.utc), "bid": batch_id},
+        )
+        
+        self.db.commit()
+
+        return True
+
     # ── Renombrar lote ────────────────────────────────────────────────────────────
     def rename(self, batch_id: uuid.UUID, user_id: uuid.UUID, new_name: str) -> Optional[dict]:
         """

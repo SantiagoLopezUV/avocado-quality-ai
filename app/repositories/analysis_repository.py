@@ -25,7 +25,7 @@ class AnalysisRepository:
         ).fetchone()
 
         if result:
-            return result[0]
+            return result[0]    
 
         # Tabla vacía: insertar un registro inicial para el modelo en producción
         new_id = uuid.uuid4()
@@ -186,6 +186,7 @@ class AnalysisRepository:
                 JOIN analysis_results ar ON ar.analysis_id = a.id
                 JOIN images i            ON i.id = a.image_id
                 WHERE a.user_id = :user_id
+                    AND a.batch_id IS NULL
                 ORDER BY a.created_at DESC
                 LIMIT :limit
                 """
@@ -220,6 +221,7 @@ class AnalysisRepository:
                 JOIN analysis_results ar ON ar.analysis_id = a.id
                 JOIN images i            ON i.id = a.image_id
                 WHERE a.user_id = :uid
+                    AND a.batch_id IS NULL
                 ORDER BY a.created_at DESC
                 LIMIT :limit OFFSET :offset
                 """

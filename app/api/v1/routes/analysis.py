@@ -340,3 +340,29 @@ def get_history(
     repo = AnalysisRepository(db)
     return {"history": repo.get_history(user_id, limit=limit)}
 
+
+# ── Eliminar análisis permanentemente ───────────────────────────────────────
+@router.delete(
+    "/analyses/{analysis_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Eliminar un análisis permanentemente",
+)
+def delete_analysis_endpoint(
+    analysis_id: uuid.UUID,
+    user_id: Optional[uuid.UUID] = Depends(get_optional_user_id),
+    db: Session = Depends(get_db),
+):
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Debes iniciar sesión para eliminar análisis.",
+        )
+    repo = AnalysisRepository(db)
+    ok = repo.delete_analysis(analysis_id, user_id)
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Análisis no encontrado o no tienes permiso para eliminarlo.",
+        )
+    return {"message": "Análisis eliminado correctamente."}
+
