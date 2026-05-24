@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/kevin/OneDrive/Escritorio/AGRO DATA VALLE/avocado-quality-ai/**)",
+      "Bash(psql -U postgres -d avocado-quality-ai -c \"\\\\d model_versions\")",
+      "Bash(psql -U postgres -d avocado-quality-ai -c \"\\\\d analysis_results\")",
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d \"avocado-quality-ai\" -c \"\\\\d model_versions\" 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\" -U postgres -d \"avocado-quality-ai\" -c \"\\\\d analysis_results\" 2>&1)",
+      "Bash(xargs cat *)",
+      "Bash(findstr /r /s \"def analyze\\\\|@router\\\\|persist_full\\\\|ripeness_level\\\\|damage_level\" app\\\\api\\\\v1\\\\routes\\\\analysis.py)",
+      "Bash(psql postgresql://postgres:1234@localhost:5432/avocado-quality-ai -c \"ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture TEXT;\")",
+      "Bash(curl -s http://127.0.0.1:8001/)",
+      "Bash(ls venv *)",
+      "Bash(ls .venv)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}
