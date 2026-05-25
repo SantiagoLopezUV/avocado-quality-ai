@@ -506,6 +506,7 @@ const DAMAGE_BADGE = {
 function formatDate(isoString) {
   if (!isoString) return "-";
   return new Date(isoString).toLocaleString("es-CO", {
+    timezone: "America/Bogota",
     day: "2-digit", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
@@ -680,6 +681,8 @@ export default function HistoryPage() {
       }
       if (filters.ripeness !== "todos" && item.ripeness_level !== filters.ripeness) return false;
       if (filters.damage   !== "todos" && item.damage_level   !== filters.damage)   return false;
+      // if (filters.dateFrom && new Date(item.created_at).getTime() < new Date(filters.dateFrom + "T05:00:00Z").getTime()) return false;
+      // if (filters.dateTo   && new Date(item.created_at).getTime() > new Date(filters.dateTo   + "T04:59:59Z").getTime()) return false;
       if (filters.dateFrom && new Date(item.created_at) < new Date(filters.dateFrom)) return false;
       if (filters.dateTo   && new Date(item.created_at) > new Date(filters.dateTo + "T23:59:59")) return false;
       if (filters.minPrice && Number(item.price_sale) < Number(filters.minPrice)) return false;

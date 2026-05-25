@@ -5,7 +5,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import ConfidencePanel from "../components/ConfidencePanel";
 import ConfirmLogoutModal from "../components/ConfirmLogoutModal";
 import { useAuth } from "../contexts/AuthContext";
-import { listBatches, createBatch, assignAnalysisToBatch } from "../services/api";
+import { listBatches, createBatch, assignAnalysisToBatch, publishToMarketplace } from "../services/api";
 
 const API_BASE = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8001"}/api/v1`;
 const DIAGNOSIS_KEY = "avocado_active_diagnosis";
@@ -34,6 +34,12 @@ export default function DashboardPage() {
   const [newBatchName, setNewBatchName] = useState("");
   const [savingBatch, setSavingBatch] = useState(false);
   const [savedBatchName, setSavedBatchName] = useState(null);
+
+  // Estados para publicar en La Plazita
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishForm, setPublishForm] = useState({ title: "", quantity_kg: "", price_per_kg: "", description: "" });
+  const [publishing, setPublishing] = useState(false);
+  const [publishedListing, setPublishedListing] = useState(null);
 
   // HU-F08: restaurar diagnóstico activo desde sessionStorage al montar
   useEffect(() => {
@@ -67,6 +73,9 @@ export default function DashboardPage() {
     setSaveTarget("individual");
     setNewBatchName("");
     setSavedBatchName(null);
+    setShowPublishModal(false);
+    setPublishForm({ title: "", quantity_kg: "", price_per_kg: "", description: "" });
+    setPublishedListing(null);
     sessionStorage.removeItem(DIAGNOSIS_KEY);
   };
 
@@ -137,6 +146,7 @@ export default function DashboardPage() {
     setSaveTarget("individual");
     setNewBatchName("");
     setSavedBatchName(null);
+    setPublishedListing(null);
     const formData = new FormData();
     formData.append("file", imageFile);
 
@@ -274,6 +284,41 @@ export default function DashboardPage() {
       : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
 
     window.open(url, "_blank");
+  };
+
+  // HU-M1: abrir modal de publicación pre-rellenando datos del análisis
+  const openPublishModal = () => {
+    setPublishForm({
+      title: `Aguacate ${result.ripeness}`,
+      quantity_kg: "",
+      price_per_kg: result.suggestedPrice?.toString() || "",
+      description: result.recommendation || "",
+    });
+    setShowPublishModal(true);
+  };
+
+  // HU-M1: enviar publicación al marketplace
+  const handlePublishToMarketplace = async () => {
+    if (!publishForm.title || !publishForm.quantity_kg || !publishForm.price_per_kg) return;
+    setPublishing(true);
+    try {
+      const listing = await publishToMarketplace(getToken(), {
+        analysis_id: result.analysis_id || null,
+        title: publishForm.title,
+        quantity_kg: parseFloat(publishForm.quantity_kg),
+        price_per_kg: parseFloat(publishForm.price_per_kg),
+        quality_score: result.healthPercent || null,
+        ripeness_level: result.ripeness || null,
+        damage_level: result.disease || null,
+        description: publishForm.description || null,
+      });
+      setPublishedListing(listing);
+      setShowPublishModal(false);
+    } catch (err) {
+      alert("Error al publicar: " + err.message);
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const handleCopyResult = () => {
@@ -690,6 +735,35 @@ export default function DashboardPage() {
                     </p>
                   )}
 
+                  {/* HU-M1: Publicar en La Plazita */}
+                  {user && result?.analysis_id && !publishedListing && (
+                    <button
+                      onClick={openPublishModal}
+                      className="w-full flex items-center justify-center gap-2 bg-[#0d1b0d] dark:bg-gray-700 text-[#11d411] border-2 border-[#11d411] py-4 rounded-2xl text-lg font-bold hover:bg-[#11d41115] transition-colors"
+                    >
+                      <span className="text-2xl">🛒</span>
+                      Publicar en Mi Plaza
+                    </button>
+                  )}
+
+                  {/* Confirmación de publicación */}
+                  {publishedListing && (
+                    <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-2xl p-4 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">🛒</span>
+                        <p className="text-base font-semibold text-green-700 dark:text-green-400">
+                          ¡Publicado en La Plaza exitosamente!
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate("/marketplace")}
+                        className="flex-shrink-0 bg-[#11d411] text-[#0d1b0d] px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#0fd40f] transition-colors"
+                      >
+                        Ver Mi Plaza →
+                      </button>
+                    </div>
+                  )}
+
                   {/* ── Panel de guardado en lote ── */}
                   {user && showSavePanel && !savedBatchName && (
                     <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-5 border-2 border-[#c5e1a5] dark:border-gray-600">
@@ -798,6 +872,116 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* HU-M1: Modal de publicación en La Plazita */}
+      {showPublishModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowPublishModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-3xl max-w-lg w-full p-8 space-y-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-[#0d1b0d] dark:text-gray-100 flex items-center gap-2">
+                <span>🛒</span> Publicar en Mi Plaza
+              </h3>
+              <button
+                onClick={() => setShowPublishModal(false)}
+                className="text-2xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Datos del análisis pre-cargados */}
+            <div className="bg-[#8bc34a10] dark:bg-[#8bc34a20] rounded-2xl p-4 grid grid-cols-3 gap-3 text-center border border-[#c5e1a5] dark:border-[#8bc34a30]">
+              <div>
+                <p className="text-xs text-[#475569] dark:text-gray-400 mb-1">Calidad IA</p>
+                <p className="text-2xl font-black text-[#8bc34a]">{result?.healthPercent}%</p>
+              </div>
+              <div>
+                <p className="text-xs text-[#475569] dark:text-gray-400 mb-1">Madurez</p>
+                <p className="text-base font-bold text-[#0d1b0d] dark:text-gray-200">{result?.ripeness}</p>
+              </div>
+              <div>
+                <p className="text-xs text-[#475569] dark:text-gray-400 mb-1">Estado</p>
+                <p className="text-sm font-semibold text-[#0d1b0d] dark:text-gray-200">{result?.disease}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold text-[#0d1b0d] dark:text-gray-200 mb-1 block">
+                  Título del anuncio *
+                </label>
+                <input
+                  type="text"
+                  value={publishForm.title}
+                  onChange={(e) => setPublishForm((f) => ({ ...f, title: e.target.value }))}
+                  className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 focus:border-[#8bc34a] outline-none dark:bg-gray-700 dark:text-white"
+                  placeholder="Ej: Aguacate Hass de primera"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-semibold text-[#0d1b0d] dark:text-gray-200 mb-1 block">
+                    Cantidad (kg) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={publishForm.quantity_kg}
+                    onChange={(e) => setPublishForm((f) => ({ ...f, quantity_kg: e.target.value }))}
+                    className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 focus:border-[#8bc34a] outline-none dark:bg-gray-700 dark:text-white"
+                    placeholder="Ej: 500"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-[#0d1b0d] dark:text-gray-200 mb-1 block">
+                    Precio/kg (COP) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={publishForm.price_per_kg}
+                    onChange={(e) => setPublishForm((f) => ({ ...f, price_per_kg: e.target.value }))}
+                    className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 focus:border-[#8bc34a] outline-none dark:bg-gray-700 dark:text-white"
+                    placeholder="Precio sugerido por IA"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-[#0d1b0d] dark:text-gray-200 mb-1 block">
+                  Descripción (opcional)
+                </label>
+                <textarea
+                  value={publishForm.description}
+                  onChange={(e) => setPublishForm((f) => ({ ...f, description: e.target.value }))}
+                  rows={3}
+                  className="w-full border-2 border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 focus:border-[#8bc34a] outline-none dark:bg-gray-700 dark:text-white resize-none"
+                  placeholder="Cuéntele a los compradores sobre su cosecha..."
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-[#475569] dark:text-gray-400">
+              Los compradores verán su nombre y podrán contactarlo por WhatsApp o teléfono usando el número de su perfil.
+            </p>
+
+            <button
+              onClick={handlePublishToMarketplace}
+              disabled={publishing || !publishForm.title || !publishForm.quantity_kg || !publishForm.price_per_kg}
+              className="w-full bg-[#11d411] text-[#0d1b0d] py-4 rounded-2xl text-xl font-bold hover:bg-[#0fd40f] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {publishing ? "⏳ Publicando..." : "✅ Confirmar y Publicar"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
