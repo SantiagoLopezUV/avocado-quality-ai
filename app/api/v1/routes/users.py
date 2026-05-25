@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Header, UploadFile, File
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 from app.schemas.user import UserCreate, UserLogin, UserResponse, ChangePasswordRequest, UserUpdate
@@ -122,6 +123,68 @@ async def upload_profile_photo(
     UserRepository(db).update_user(user_id, {"profile_picture": relative_path})
 
     return {"profile_picture": relative_path, "message": "Foto de perfil actualizada correctamente."}
+
+
+@router.get("/me/notifications", summary="Notificaciones reales del usuario autenticado")
+def get_my_notifications(
+    db: Session = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    ratings = db.execute(
+        text("""
+            SELECT
+                lr.id::text      AS id,
+                lr.stars,
+                ml.title         AS listing_title,
+                lr.updated_at    AS created_at
+            FROM listing_ratings lr
+            JOIN marketplace_listings ml ON ml.id = lr.listing_id
+            WHERE ml.user_id = :user_id
+            ORDER BY lr.updated_at DESC
+            LIMIT 20
+        """),
+        {"user_id": user_id},
+    ).fetchall()
+
+    listings = db.execute(
+        text("""
+            SELECT
+                id::text   AS id,
+                title,
+                created_at
+            FROM marketplace_listings
+            WHERE user_id = :user_id
+            ORDER BY created_at DESC
+            LIMIT 10
+        """),
+        {"user_id": user_id},
+    ).fetchall()
+
+    notifications = []
+
+    for r in ratings:
+        stars_word = "estrella" if r.stars == 1 else "estrellas"
+        notifications.append({
+            "id": f"rating_{r.id}",
+            "type": "rating",
+            "icon": "⭐",
+            "title": "Nueva calificación",
+            "message": f"Tu lote '{r.listing_title}' recibió {r.stars} {stars_word}",
+            "time": r.created_at.isoformat(),
+        })
+
+    for l in listings:
+        notifications.append({
+            "id": f"lot_{l.id}",
+            "type": "lot",
+            "icon": "📦",
+            "title": "Lote publicado",
+            "message": f"Tu lote '{l.title}' fue publicado en La Plazita",
+            "time": l.created_at.isoformat(),
+        })
+
+    notifications.sort(key=lambda n: n["time"], reverse=True)
+    return notifications[:20]
 
 
 @router.post("/change-password")

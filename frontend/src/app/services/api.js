@@ -279,3 +279,29 @@ export async function getListingAnalyses(listingId) {
   const response = await fetch(`${API_BASE_URL}/marketplace/${listingId}/analyses`);
   return handleResponse(response);
 }
+
+export async function rateListing(token, listingId, stars) {
+  const response = await fetch(`${API_BASE_URL}/marketplace/${listingId}/ratings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ stars }),
+  });
+  return handleResponse(response);
+}
+
+export async function getMyListingRating(token, listingId) {
+  const response = await fetch(`${API_BASE_URL}/marketplace/${listingId}/ratings/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(response);
+}
+
+export async function getMyNotifications(token) {
+  const response = await fetch(`${API_BASE_URL}/users/me/notifications`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(response);
+}

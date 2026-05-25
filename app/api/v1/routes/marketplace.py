@@ -4,7 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.schemas.marketplace import MarketplaceListingCreate, MarketplaceListingOut, ListingAnalysisOut
+from app.schemas.marketplace import (
+    MarketplaceListingCreate, MarketplaceListingOut,
+    ListingAnalysisOut, RatingCreate, RatingOut,
+)
 from app.repositories.marketplace_repository import MarketplaceRepository
 from app.repositories.user_repository import UserRepository
 from app.api.v1.routes.batches import require_user
@@ -58,6 +61,33 @@ def get_listing_analyses(
     db: Session = Depends(get_db),
 ):
     return MarketplaceRepository(db).get_listing_analyses(listing_id)
+
+
+@router.post(
+    "/{listing_id}/ratings",
+    response_model=RatingOut,
+    summary="Calificar un lote (crea o actualiza la calificación del usuario)",
+)
+def upsert_rating(
+    listing_id: uuid.UUID,
+    body: RatingCreate,
+    user_id: uuid.UUID = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    return MarketplaceRepository(db).upsert_rating(listing_id, user_id, body.stars)
+
+
+@router.get(
+    "/{listing_id}/ratings/me",
+    summary="Obtener mi calificación para un lote (requiere sesión)",
+)
+def get_my_rating(
+    listing_id: uuid.UUID,
+    user_id: uuid.UUID = Depends(require_user),
+    db: Session = Depends(get_db),
+):
+    stars = MarketplaceRepository(db).get_my_rating(listing_id, user_id)
+    return {"stars": stars}
 
 
 @router.delete(

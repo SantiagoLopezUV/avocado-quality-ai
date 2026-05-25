@@ -11,7 +11,51 @@ import {
   deleteMarketplaceListing,
   listBatches,
   getListingAnalyses,
+  rateListing,
+  getMyListingRating,
 } from "../services/api";
+
+function StarDisplay({ avg, count, size = "sm" }) {
+  const filled = Math.round(avg || 0);
+  const starSize = size === "lg" ? "text-2xl" : "text-base";
+  return (
+    <span className={`flex items-center gap-1 ${starSize}`}>
+      {[1, 2, 3, 4, 5].map((s) => (
+        <span key={s} className={s <= filled ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"}>
+          ★
+        </span>
+      ))}
+      {count > 0 && (
+        <span className="text-sm text-[#475569] dark:text-gray-400 ml-1">
+          {avg?.toFixed(1)} ({count})
+        </span>
+      )}
+    </span>
+  );
+}
+
+function StarPicker({ value, onChange, disabled }) {
+  const [hover, setHover] = useState(0);
+  return (
+    <span className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((s) => (
+        <button
+          key={s}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(s)}
+          onMouseEnter={() => setHover(s)}
+          onMouseLeave={() => setHover(0)}
+          className={`text-3xl transition-colors disabled:cursor-not-allowed ${
+            s <= (hover || value) ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"
+          } hover:scale-110`}
+        >
+          ★
+        </button>
+      ))}
+    </span>
+  );
+}
 
 export default function MarketplacePage() {
   const navigate = useNavigate();
@@ -22,6 +66,10 @@ export default function MarketplacePage() {
   const [previewSrc, setPreviewSrc] = useState(null);
   const [filter, setFilter] = useState("todos");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const [myRating, setMyRating] = useState(null);
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [ratingDone, setRatingDone] = useState(false);
 
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -106,15 +154,50 @@ export default function MarketplacePage() {
   async function openListing(lot) {
     setSelectedLot(lot);
     setSelectedLotAnalyses([]);
-    if (!lot.batch_id) return;
+    setMyRating(null);
+    setRatingDone(false);
+
+    const fetchAnalyses = lot.batch_id
+      ? getListingAnalyses(lot.id).catch(() => [])
+      : Promise.resolve([]);
+
+    const fetchMyRating = user
+      ? getMyListingRating(getToken(), lot.id).catch(() => ({ stars: null }))
+      : Promise.resolve({ stars: null });
+
     setLoadingAnalyses(true);
     try {
-      const analyses = await getListingAnalyses(lot.id);
+      const [analyses, ratingRes] = await Promise.all([fetchAnalyses, fetchMyRating]);
       setSelectedLotAnalyses(analyses);
-    } catch {
-      // no crítico — el modal abre igual sin análisis
+      setMyRating(ratingRes.stars ?? null);
     } finally {
       setLoadingAnalyses(false);
+    }
+  }
+
+  async function handleRate(stars) {
+    if (!user || submittingRating) return;
+    setSubmittingRating(true);
+    try {
+      const result = await rateListing(getToken(), selectedLot.id, stars);
+      setMyRating(stars);
+      setRatingDone(true);
+      setSelectedLot(prev => ({
+        ...prev,
+        avg_rating: result.avg_rating,
+        rating_count: result.rating_count,
+      }));
+      setListings(prev =>
+        prev.map(l =>
+          l.id === selectedLot.id
+            ? { ...l, avg_rating: result.avg_rating, rating_count: result.rating_count }
+            : l
+        )
+      );
+    } catch {
+      // no bloquea el modal
+    } finally {
+      setSubmittingRating(false);
     }
   }
 
@@ -346,6 +429,11 @@ export default function MarketplacePage() {
                         <span>⚖️</span>
                         {lot.quantity_kg} kg disponibles
                       </p>
+                      {lot.rating_count > 0 ? (
+                        <StarDisplay avg={lot.avg_rating} count={lot.rating_count} />
+                      ) : (
+                        <span className="text-sm text-[#94a3b8] dark:text-gray-500">Sin calificaciones aún</span>
+                      )}
                     </div>
 
                     <div className="pt-3 border-t-2 border-[#e4ede4] dark:border-gray-700 flex justify-between items-center">
@@ -662,6 +750,54 @@ export default function MarketplacePage() {
                   )}
                 </div>
               )}
+
+              {/* Calificaciones */}
+              <div className="bg-[#f3f7f3] dark:bg-gray-700 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-lg font-bold text-[#0d1b0d] dark:text-gray-100 flex items-center gap-2">
+                    <span>⭐</span> Calificaciones
+                  </h3>
+                  {selectedLot.rating_count > 0 ? (
+                    <StarDisplay avg={selectedLot.avg_rating} count={selectedLot.rating_count} size="lg" />
+                  ) : (
+                    <span className="text-sm text-[#94a3b8] dark:text-gray-400">Sin calificaciones aún</span>
+                  )}
+                </div>
+
+                {user && user.id !== selectedLot.user_id && (
+                  <div>
+                    <p className="text-sm font-semibold text-[#475569] dark:text-gray-400 mb-2">
+                      {myRating ? "Tu calificación (toca para cambiar):" : "Califica este lote:"}
+                    </p>
+                    <StarPicker
+                      value={myRating || 0}
+                      onChange={handleRate}
+                      disabled={submittingRating}
+                    />
+                    {ratingDone && (
+                      <p className="text-sm text-[#8bc34a] dark:text-[#9ccc65] mt-1 font-semibold">
+                        {myRating === myRating ? "¡Calificación guardada!" : ""}
+                      </p>
+                    )}
+                    {submittingRating && (
+                      <p className="text-sm text-[#475569] dark:text-gray-400 mt-1">Guardando...</p>
+                    )}
+                  </div>
+                )}
+
+                {!user && (
+                  <p className="text-sm text-[#475569] dark:text-gray-400">
+                    <button onClick={() => navigate("/")} className="text-[#8bc34a] dark:text-[#9ccc65] font-semibold hover:underline">
+                      Inicia sesión
+                    </button>{" "}
+                    para calificar este lote.
+                  </p>
+                )}
+
+                {user && user.id === selectedLot.user_id && (
+                  <p className="text-sm text-[#94a3b8] dark:text-gray-500">No puedes calificar tu propio lote.</p>
+                )}
+              </div>
 
               {/* Precio y contacto */}
               <div className="flex items-center justify-between pt-4 border-t-2 border-[#e4ede4] dark:border-gray-700">

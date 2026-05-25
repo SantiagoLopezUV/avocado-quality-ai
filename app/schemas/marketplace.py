@@ -33,6 +33,8 @@ class MarketplaceListingOut(BaseModel):
     description: Optional[str] = None
     status: str
     created_at: datetime
+    avg_rating: Optional[float] = None
+    rating_count: int = 0
 
     class Config:
         from_attributes = True
@@ -47,3 +49,18 @@ class ListingAnalysisOut(BaseModel):
     message: Optional[str] = None
     created_at: datetime
     file_path: Optional[str] = None
+
+
+class RatingCreate(BaseModel):
+    stars: int = Field(..., ge=1, le=5)
+
+
+class RatingOut(BaseModel):
+    listing_id: uuid.UUID
+    user_id: uuid.UUID
+    stars: int
+    avg_rating: Optional[float] = None
+    rating_count: int = 0
+
+    class Config:
+        from_attributes = True

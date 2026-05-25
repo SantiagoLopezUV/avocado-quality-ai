@@ -1,78 +1,31 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
 import ConfirmLogoutModal from "../components/ConfirmLogoutModal";
 import { useAuth } from "../contexts/AuthContext";
+import { getMyNotifications } from "../services/api";
 
 const API_BASE = `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8001"}/api/v1`;
 const STATIC_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8001";
 
-// ── Notificaciones mock (HU-F12) ──────────────────────────────────────────────
-// Cuando el backend implemente el endpoint se reemplaza este array por fetch().
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: "rating",
-    icon: "⭐",
-    title: "Nueva calificación",
-    message: "Don Carlos Ramírez calificó tu lote Hass Premium con 5 estrellas",
-    time: "Hace 2 horas",
-    isNew: true,
-  },
-  {
-    id: 2,
-    type: "visit",
-    icon: "👁️",
-    title: "Visitas al perfil",
-    message: "12 personas visitaron tu perfil esta semana",
-    time: "Hace 5 horas",
-    isNew: true,
-  },
-  {
-    id: 3,
-    type: "lot",
-    icon: "📦",
-    title: "Lote publicado",
-    message: "Tu lote Hass Exportación fue publicado exitosamente en la plaza",
-    time: "Ayer",
-    isNew: true,
-  },
-  {
-    id: 4,
-    type: "interest",
-    icon: "💬",
-    title: "Interés en tu lote",
-    message: "3 compradores están interesados en tu lote Hass Selecto",
-    time: "Hace 2 días",
-    isNew: false,
-  },
-  {
-    id: 5,
-    type: "rating",
-    icon: "⭐",
-    title: "Nueva calificación",
-    message: "Doña Ana López calificó tu perfil con 4 estrellas",
-    time: "Hace 3 días",
-    isNew: false,
-  },
-  {
-    id: 6,
-    type: "visit",
-    icon: "👁️",
-    title: "Visitas al perfil",
-    message: "Tu perfil fue visto 28 veces este mes",
-    time: "Hace 4 días",
-    isNew: false,
-  },
-];
-
 const NOTIF_COLORS = {
-  rating:   { bg: "bg-yellow-50 dark:bg-yellow-900/20",  border: "border-yellow-200 dark:border-yellow-700",  dot: "bg-yellow-400" },
-  visit:    { bg: "bg-blue-50 dark:bg-blue-900/20",      border: "border-blue-200 dark:border-blue-700",      dot: "bg-blue-400"   },
-  lot:      { bg: "bg-green-50 dark:bg-green-900/20",    border: "border-green-200 dark:border-green-700",    dot: "bg-green-500"  },
-  interest: { bg: "bg-purple-50 dark:bg-purple-900/20",  border: "border-purple-200 dark:border-purple-700",  dot: "bg-purple-400" },
+  rating: { bg: "bg-yellow-50 dark:bg-yellow-900/20", border: "border-yellow-200 dark:border-yellow-700", dot: "bg-yellow-400" },
+  lot:    { bg: "bg-green-50 dark:bg-green-900/20",   border: "border-green-200 dark:border-green-700",   dot: "bg-green-500"  },
 };
+
+function relativeTime(isoString) {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)   return "Ahora mismo";
+  if (m < 60)  return `Hace ${m} ${m === 1 ? "minuto" : "minutos"}`;
+  const h = Math.floor(m / 60);
+  if (h < 24)  return `Hace ${h} ${h === 1 ? "hora" : "horas"}`;
+  const d = Math.floor(h / 24);
+  if (d === 1) return "Ayer";
+  if (d < 7)   return `Hace ${d} días`;
+  return new Date(isoString).toLocaleDateString("es-CO", { day: "numeric", month: "short" });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -106,32 +59,43 @@ export default function ProfilePage() {
   const handleLogout = () => { logout(); navigate("/"); };
 
   // ── Notificaciones (HU-F12) ───────────────────────────────────────────────
-  // readIds: IDs que el usuario ya vio, persistidos en localStorage por userId
   const storageKey = user ? `avocado_notif_read_${user.id}` : null;
+  const [rawNotifications, setRawNotifications] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [readIds, setReadIds] = useState(() => {
-    if (!storageKey) return [];
-    try {
-      return JSON.parse(localStorage.getItem(storageKey) || "[]");
-    } catch {
-      return [];
-    }
+    if (!storageKey) return new Set();
+    try { return new Set(JSON.parse(localStorage.getItem(storageKey) || "[]")); }
+    catch { return new Set(); }
   });
 
+  const fetchNotifications = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+    setNotifLoading(true);
+    try {
+      const data = await getMyNotifications(token);
+      setRawNotifications(data);
+    } catch {
+      // silencioso — no bloquea la página
+    } finally {
+      setNotifLoading(false);
+    }
+  }, [getToken]);
+
+  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
+
   const notifications = useMemo(
-    () =>
-      MOCK_NOTIFICATIONS.map((n) => ({
-        ...n,
-        isNew: n.isNew && !readIds.includes(n.id),
-      })),
-    [readIds]
+    () => rawNotifications.map((n) => ({ ...n, isNew: !readIds.has(n.id) })),
+    [rawNotifications, readIds]
   );
 
   const unreadCount = useMemo(() => notifications.filter((n) => n.isNew).length, [notifications]);
 
   const markAllRead = () => {
-    const allIds = MOCK_NOTIFICATIONS.map((n) => n.id);
+    const allIds = new Set(rawNotifications.map((n) => n.id));
     setReadIds(allIds);
-    if (storageKey) localStorage.setItem(storageKey, JSON.stringify(allIds));
+    if (storageKey) localStorage.setItem(storageKey, JSON.stringify([...allIds]));
   };
 
   // ── Redirigir si no está logueado ─────────────────────────────────────────
@@ -437,87 +401,101 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* ── Panel de notificaciones (HU-F12) ─────────────────────────── */}
+          {/* ── Panel de notificaciones desplegable (HU-F12) ──────────────── */}
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 transition-colors">
-
-            {/* Encabezado de sección */}
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
+            {/* Botón desplegable */}
+            <button
+              onClick={() => {
+                setShowNotifPanel((v) => !v);
+                if (!showNotifPanel) fetchNotifications();
+              }}
+              className="w-full flex items-center justify-between text-xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors"
+            >
+              <span className="flex items-center gap-3">
                 <span className="text-2xl">🔔</span>
-                <h3 className="text-xl font-bold text-[#0d1b0d] dark:text-gray-100 transition-colors">
-                  Actividad Reciente
-                </h3>
+                Actividad Reciente
                 {unreadCount > 0 && (
                   <span className="bg-red-500 text-white text-xs font-black rounded-full min-w-[22px] h-[22px] flex items-center justify-center px-1.5 leading-none">
                     {unreadCount}
                   </span>
                 )}
-              </div>
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllRead}
-                  className="text-sm font-semibold text-[#8bc34a] dark:text-[#9ccc65] hover:underline transition-colors"
-                >
-                  Marcar todas como leídas
-                </button>
-              )}
-            </div>
+              </span>
+              <span className={`text-[#8bc34a] transition-transform duration-200 ${showNotifPanel ? "rotate-180" : ""}`}>▼</span>
+            </button>
 
-            {/* Lista de notificaciones o estado vacío */}
-            {notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3">
-                <span className="text-5xl opacity-30">🔕</span>
-                <p className="text-lg font-semibold text-[#475569] dark:text-gray-400 transition-colors">
-                  No hay actividad reciente
-                </p>
-                <p className="text-sm text-[#94a3b8] dark:text-gray-500 transition-colors">
-                  Aquí aparecerán calificaciones, visitas y novedades de sus lotes.
-                </p>
-              </div>
-            ) : (
-              <ul className="space-y-3">
-                {notifications.map((notif) => {
-                  const colors = NOTIF_COLORS[notif.type] || NOTIF_COLORS.visit;
-                  return (
-                    <li
-                      key={notif.id}
-                      className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-colors ${
-                        notif.isNew
-                          ? `${colors.bg} ${colors.border}`
-                          : "bg-[#f9fafb] dark:bg-gray-700/50 border-transparent"
-                      }`}
+            {showNotifPanel && (
+              <div className="mt-5">
+                {/* Acción "marcar como leídas" */}
+                {unreadCount > 0 && (
+                  <div className="flex justify-end mb-3">
+                    <button
+                      onClick={markAllRead}
+                      className="text-sm font-semibold text-[#8bc34a] dark:text-[#9ccc65] hover:underline transition-colors"
                     >
-                      {/* Icono + punto de "no leído" */}
-                      <div className="relative flex-shrink-0">
-                        <span className="text-2xl">{notif.icon}</span>
-                        {notif.isNew && (
-                          <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ${colors.dot} border-2 border-white dark:border-gray-800`} />
-                        )}
-                      </div>
+                      Marcar todas como leídas
+                    </button>
+                  </div>
+                )}
 
-                      {/* Contenido */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <p className={`text-sm font-bold ${notif.isNew ? "text-[#0d1b0d] dark:text-gray-100" : "text-[#475569] dark:text-gray-300"} transition-colors`}>
-                            {notif.title}
+                {/* Contenido */}
+                {notifLoading ? (
+                  <div className="flex items-center justify-center py-10 gap-3">
+                    <span className="text-3xl animate-spin">⏳</span>
+                    <p className="text-base text-[#475569] dark:text-gray-400">Cargando notificaciones…</p>
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 gap-3">
+                    <span className="text-5xl opacity-30">🔕</span>
+                    <p className="text-lg font-semibold text-[#475569] dark:text-gray-400 transition-colors">
+                      No hay actividad reciente
+                    </p>
+                    <p className="text-sm text-[#94a3b8] dark:text-gray-500 transition-colors">
+                      Aquí aparecerán calificaciones y novedades de sus lotes.
+                    </p>
+                  </div>
+                ) : (
+                  <ul className="space-y-3">
+                    {notifications.map((notif) => {
+                      const colors = NOTIF_COLORS[notif.type] || NOTIF_COLORS.lot;
+                      return (
+                        <li
+                          key={notif.id}
+                          className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-colors ${
+                            notif.isNew
+                              ? `${colors.bg} ${colors.border}`
+                              : "bg-[#f9fafb] dark:bg-gray-700/50 border-transparent"
+                          }`}
+                        >
+                          <div className="relative flex-shrink-0">
+                            <span className="text-2xl">{notif.icon}</span>
                             {notif.isNew && (
-                              <span className="ml-2 bg-[#8bc34a] text-[#0d1b0d] text-[10px] font-black uppercase px-1.5 py-0.5 rounded-full">
-                                Nuevo
-                              </span>
+                              <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ${colors.dot} border-2 border-white dark:border-gray-800`} />
                             )}
-                          </p>
-                          <span className="text-xs text-[#94a3b8] dark:text-gray-500 flex-shrink-0 transition-colors">
-                            {notif.time}
-                          </span>
-                        </div>
-                        <p className={`text-sm mt-0.5 ${notif.isNew ? "text-[#334155] dark:text-gray-200" : "text-[#64748b] dark:text-gray-400"} transition-colors`}>
-                          {notif.message}
-                        </p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <p className={`text-sm font-bold ${notif.isNew ? "text-[#0d1b0d] dark:text-gray-100" : "text-[#475569] dark:text-gray-300"} transition-colors`}>
+                                {notif.title}
+                                {notif.isNew && (
+                                  <span className="ml-2 bg-[#8bc34a] text-[#0d1b0d] text-[10px] font-black uppercase px-1.5 py-0.5 rounded-full">
+                                    Nuevo
+                                  </span>
+                                )}
+                              </p>
+                              <span className="text-xs text-[#94a3b8] dark:text-gray-500 flex-shrink-0 transition-colors">
+                                {relativeTime(notif.time)}
+                              </span>
+                            </div>
+                            <p className={`text-sm mt-0.5 ${notif.isNew ? "text-[#334155] dark:text-gray-200" : "text-[#64748b] dark:text-gray-400"} transition-colors`}>
+                              {notif.message}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             )}
           </div>
 

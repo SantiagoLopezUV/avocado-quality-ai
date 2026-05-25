@@ -274,7 +274,7 @@ export default function DashboardPage() {
       `📊 *Madurez:* ${result.ripeness}\n` +
       `❤️ *Estado de salud:* ${result.health} (${result.healthPercent}%)\n` +
       `🦠 *Enfermedades:* ${result.disease}\n` +
-      `💰 *Precio sugerido:* $${result.suggestedPrice?.toLocaleString("es-CO")} COP/kg\n` +
+      `💰 *Precio sugerido:* $${result.suggestedPrice?.toLocaleString("es-CO")}  COP/kg\n` +
       `📍 *Destino de mercado:* ${result.destination}\n\n` +
       `_Analizado con Avocado Quality AI_ 🤖`;
 
