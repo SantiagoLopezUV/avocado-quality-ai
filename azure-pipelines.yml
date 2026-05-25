@@ -1,0 +1,107 @@
+# ======================================================
+# Azure DevOps CI/CD — Avocado Quality AI
+# Build y Push a Docker Hub
+# ======================================================
+# Variables requeridas (Pipelines > Library):
+#   DOCKERHUB_USERNAME — alejoospina
+#   VITE_API_URL       — https://avocado-backend.lemonbeach-392a5bb8.canadacentral.azurecontainerapps.io
+#
+# Service connection requerida (Project Settings > Service connections):
+#   avocado-quality-ai-dockerhub — Docker Hub (tipo: Docker Registry)
+#     Usuario: alejoospina
+# ======================================================
+
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  - name: IMAGE_REPO
+    value: "$(DOCKERHUB_USERNAME)/avocado-quality-ai"
+  - name: TAG
+    value: "$(Build.BuildId)"
+
+stages:
+
+
+# Stage 1: Verificar estructura del proyecto
+
+- stage: verify
+  displayName: "Stage 1 — Verificar estructura"
+  jobs:
+  - job: check
+    pool:
+      vmImage: "ubuntu-latest"
+    steps:
+    - checkout: self
+
+    - script: |
+        fail=0
+        check_file() {
+          if [ -f "$1" ]; then echo "OK  $1"
+          else echo "ERR $1 — no encontrado"; fail=1; fi
+        }
+        check_file "app/Dockerfile"
+        check_file "app/main.py"
+        check_file "requirements.txt"
+        check_file "frontend/Dockerfile"
+        check_file "frontend/package.json"
+        [ "$fail" -eq 1 ] && exit 1
+        echo "Estructura OK"
+      displayName: "Verificar archivos clave"
+
+
+# Stage 2: Backend — Build y Push a Docker Hub
+
+- stage: build_backend
+  displayName: "Stage 2 — Build & Push Backend"
+  dependsOn: verify
+  condition: succeeded()
+  jobs:
+  - job: build
+    displayName: "Docker Build & Push (Backend)"
+    pool:
+      vmImage: "ubuntu-latest"
+    steps:
+    - checkout: self
+
+    - task: Docker@2
+      displayName: "Build y Push — Backend"
+      inputs:
+        containerRegistry: "avocado-quality-ai-dockerhub"
+        repository: "$(IMAGE_REPO)"
+        command: buildAndPush
+        Dockerfile: "app/Dockerfile"
+        buildContext: "."
+        tags: |
+          backend
+          backend-$(TAG)
+
+
+# Stage 3: Frontend — Build y Push a Docker Hub
+
+- stage: build_frontend
+  displayName: "Stage 3 — Build & Push Frontend"
+  dependsOn: verify
+  condition: succeeded()
+  jobs:
+  - job: build
+    displayName: "Docker Build & Push (Frontend)"
+    pool:
+      vmImage: "ubuntu-latest"
+    steps:
+    - checkout: self
+
+    - task: Docker@2
+      displayName: "Build y Push — Frontend"
+      inputs:
+        containerRegistry: "avocado-quality-ai-dockerhub"
+        repository: "$(IMAGE_REPO)"
+        command: buildAndPush
+        Dockerfile: "frontend/Dockerfile"
+        buildContext: "frontend"
+        arguments: "--build-arg VITE_API_URL=$(VITE_API_URL)"
+        tags: |
+          frontend-v2
+          frontend-v2-$(TAG)

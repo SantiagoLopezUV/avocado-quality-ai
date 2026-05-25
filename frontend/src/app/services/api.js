@@ -247,3 +247,35 @@ export async function deleteAnalysis(token, analysisId) {
   });
   return handleResponse(response);
 }
+
+// ── MARKETPLACE (La Plazita) ──────────────────────────────────────────────────
+
+export async function getMarketplaceListings(limit = 50) {
+  const response = await fetch(`${API_BASE_URL}/marketplace?limit=${limit}`);
+  return handleResponse(response);
+}
+
+export async function publishToMarketplace(token, data) {
+  const response = await fetch(`${API_BASE_URL}/marketplace`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  return handleResponse(response);
+}
+
+export async function deleteMarketplaceListing(token, listingId) {
+  const response = await fetch(`${API_BASE_URL}/marketplace/${listingId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(response);
+}
+
+export async function getListingAnalyses(listingId) {
+  const response = await fetch(`${API_BASE_URL}/marketplace/${listingId}/analyses`);
+  return handleResponse(response);
+}
