@@ -38,10 +38,19 @@ const DAMAGE_BADGE = {
   severo:   "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
-function formatDate(iso) {
-  if (!iso) return "-";
-  return new Date(iso).toLocaleString("es-CO", {
-    timeZone: "America/Bogota",
+// function formatDate(iso) {
+//   if (!iso) return "-";
+//   return new Date(iso).toLocaleString("es-CO", {
+//     timeZone: "America/Bogota",
+//     day: "2-digit", month: "short", year: "numeric",
+//     hour: "2-digit", minute: "2-digit",
+//   });
+// }
+function formatDate(isoString) {
+  if (!isoString) return "-";
+  // UTC-5 Colombia: restar 5 horas manualmente
+  const date = new Date(new Date(isoString).getTime() - 5 * 60 * 60 * 1000);
+  return date.toLocaleString("es-CO", {
     day: "2-digit", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
