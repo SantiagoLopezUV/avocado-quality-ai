@@ -1,6 +1,6 @@
 -- Migración 002: Crear tabla batches para gestión de lotes
 -- Ejecutar: docker exec -i agrodata-db psql -U agrodata_user -d agrodata_db < migrations/002_create_batches_table.sql
--- O contra Azure: psql $DATABASE_URL < migrations/002_create_batches_table.sql
+-- O en Azure: psql $DATABASE_URL < migrations/002_create_batches_table.sql
 
 CREATE TABLE IF NOT EXISTS batches (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
