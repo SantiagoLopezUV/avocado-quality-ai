@@ -814,5 +814,3 @@ El diagnóstico activo se guarda temporalmente en el navegador. Si vuelve a abri
 
 ---
 
-*Documento generado automáticamente a partir del código fuente del proyecto AgroData Valle — Avocado Quality AI.*
-*Versión del documento: 1.0 — Mayo 2026*
